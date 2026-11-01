@@ -6,7 +6,7 @@ import { drawClouds } from '../world/sky.js';
 import { Camera, applyCamera } from '../core/camera.js';
 import { track, prog, clamp, lerp, Ease, TAU, mixv } from '../core/math.js';
 import { noise1, hash } from '../core/noise.js';
-import { blob, rgba, inkRGB, softDot } from '../ink/brush.js';
+import { blob, rgba, inkRGB, softDot, fgOf } from '../ink/brush.js';
 import { GRANDPA, GIRL6 } from '../actors/cast.js';
 import { POSE, walk, run } from '../actors/rig.js';
 import { drawKite, drawString, drawReel, kiteBridle, kiteFrameTip, kitePaintTip, drawFlock, drawKnot } from '../actors/props.js';
@@ -156,7 +156,7 @@ export const S03 = {
     const hand = [tip[0] + 24, tip[1] + 30];
     const enter = prog(t, 0.0, 0.8, 'outCubic') * (1 - prog(t, 7.2, 8, 'inCubic'));
     const H2 = [lerp(1800, hand[0], enter), lerp(1300, hand[1], enter)];
-    drawArmIn(ctx, [H2[0] + 330, H2[1] + 300], H2, 74, SLEEVE);
+    drawArmIn(fgOf(ctx), [H2[0] + 330, H2[1] + 300], H2, 74, SLEEVE);
   },
 };
 
@@ -180,15 +180,15 @@ export const S04 = {
       const lift = Math.abs(Math.sin(paint * 60)) * 6;
       const ang = -0.95;
       const tp = [lerp(1750, tip[0], on), lerp(-50, tip[1] - lift, on)];
-      drawBrushTool(ctx, tp, ang, 300);
+      drawBrushTool(fgOf(ctx), tp, ang, 300);
       const hand = [tp[0] + Math.cos(ang) * 230, tp[1] + Math.sin(ang) * 230];
-      drawArmIn(ctx, [hand[0] + 300, hand[1] - 240], hand, 74, SLEEVE);
+      drawArmIn(fgOf(ctx), [hand[0] + 300, hand[1] - 240], hand, 74, SLEEVE);
     }
     // 小燕从左下角探出脑袋
     const peek = prog(t, 4.3, 5.4, 'outBack');
     if (peek > 0) {
       const hx = lerp(-180, 300, peek), hy = lerp(1200, 880, peek);
-      bigHead(ctx, GIRL6, hx, hy, 14, { facing: 1, head: -0.2 + Math.sin(t * 2) * 0.03, mouth: t < 6.3 ? 'open' : 'smile', eyesUp: true, wind: 0.2, armF: [0.3, 0.4] }, t);
+      bigHead(fgOf(ctx), GIRL6, hx, hy, 14, { facing: 1, head: -0.2 + Math.sin(t * 2) * 0.03, mouth: t < 6.3 ? 'open' : 'smile', eyesUp: true, wind: 0.2, armF: [0.3, 0.4] }, t);
     }
   },
 };
@@ -371,9 +371,10 @@ export const S08 = {
     applyCamera(ctx, cam, 1, R.base);
     const wb = kiteWobble(t + 26, 3);
     const K = { x: SKY_KITE[0] + wb.dx * 1.5, y: SKY_KITE[1] + wb.dy * 1.5, size: 34, rot: wb.rot };
-    drawString(ctx, [SKY_KITE[0] + 900, SKY_KITE[1] + 1400], kiteBridle(K), { width: 0.45, t, sag: 0.04, wobble: 1 });
-    drawKite(ctx, { ...K, lineW: 0.5 });
-    drawFlock(ctx, t, {
+    const F = fgOf(ctx);
+    drawString(F, [SKY_KITE[0] + 900, SKY_KITE[1] + 1400], kiteBridle(K), { width: 0.45, t, sag: 0.04, wobble: 1 });
+    drawKite(F, { ...K, lineW: 0.5 });
+    drawFlock(F, t, {
       count: 5, seed: 7, speed: 0.06, spread: 0.5, size: 7, jitter: 10, flapRate: 3.4,
       path: (u, i, h) => {
         const a = u * TAU + h * TAU;

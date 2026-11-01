@@ -5,7 +5,7 @@ import { drawSky } from '../world/landscape.js';
 import { drawClouds } from '../world/sky.js';
 import { track, prog, clamp, lerp, Ease, TAU, mixv, envelope } from '../core/math.js';
 import { noise1, hash } from '../core/noise.js';
-import { rgba, inkRGB, whiteOf, softDot } from '../ink/brush.js';
+import { rgba, inkRGB, whiteOf, softDot, fgOf } from '../ink/brush.js';
 import { GRANDPA, GIRL6, WOMAN, DAUGHTER } from '../actors/cast.js';
 import { POSE, walk, run } from '../actors/rig.js';
 import { drawKite, drawString, drawReel, drawKnot, kiteBridle, kitePaintTip, drawFlock } from '../actors/props.js';
@@ -204,13 +204,14 @@ export const S21B = {
     const k = prog(t, 0.2, 1.9, 'inOutSine');
     const L = [lerp(760, 960, k), lerp(600, 545, k)];
     const Rr = [lerp(1160, 960, k), lerp(480, 545, k)];
-    drawString(ctx, [300, 740], L, { width: 4, t, sag: 0.06, wobble: 1 });
-    drawString(ctx, [1690, 380], Rr, { width: 4, t, sag: 0.06, wobble: 1 });
+    const F = fgOf(ctx);
+    drawString(F, [300, 740], L, { width: 4, t, sag: 0.06, wobble: 1 });
+    drawString(F, [1690, 380], Rr, { width: 4, t, sag: 0.06, wobble: 1 });
     const knot = prog(t, 1.8, 2.5, 'outBack');
-    if (knot > 0) drawKnot(ctx, [960, 545], 14 * knot);
+    if (knot > 0) drawKnot(F, [960, 545], 14 * knot);
     const pull = prog(t, 2.5, 3.2, 'outCubic');
-    drawArmIn(ctx, [L[0] - 260 - pull * 30, L[1] + 330], [L[0] - 50 - pull * 30, L[1] + 40], 110, W_SLEEVE);
-    drawArmIn(ctx, [Rr[0] + 300 + pull * 30, Rr[1] + 360], [Rr[0] + 50 + pull * 30, Rr[1] + 40], 110, W_SLEEVE);
+    drawArmIn(fgOf(ctx), [L[0] - 260 - pull * 30, L[1] + 330], [L[0] - 50 - pull * 30, L[1] + 40], 110, W_SLEEVE);
+    drawArmIn(fgOf(ctx), [Rr[0] + 300 + pull * 30, Rr[1] + 360], [Rr[0] + 50 + pull * 30, Rr[1] + 40], 110, W_SLEEVE);
   },
 };
 
@@ -229,13 +230,13 @@ export const S21C = {
     const on = prog(t, 0.0, 0.4, 'outCubic');
     const tip = kitePaintTip(INSERT_KITE, paint);
     const tp = [lerp(1750, tip[0], on), lerp(-50, tip[1] - Math.abs(Math.sin(paint * 60)) * 6, on)];
-    drawBrushTool(ctx, tp, -0.95, 300);
+    drawBrushTool(fgOf(ctx), tp, -0.95, 300);
     const hand = [tp[0] + Math.cos(-0.95) * 230, tp[1] + Math.sin(-0.95) * 230];
-    drawArmIn(ctx, [hand[0] + 300, hand[1] - 240], hand, 74, W_SLEEVE);
+    drawArmIn(fgOf(ctx), [hand[0] + 300, hand[1] - 240], hand, 74, W_SLEEVE);
     const peek = prog(t, 1.4, 2.4, 'outBack');
     if (peek > 0) {
       const hx = lerp(-180, 300, peek), hy = lerp(1200, 880, peek);
-      bigHead(ctx, DAUGHTER, hx, hy, 14, { facing: 1, head: -0.2 + Math.sin(t * 2) * 0.03, mouth: t < 3.2 ? 'open' : 'smile', eyesUp: true, wind: 0.2, armF: [0.3, 0.4] }, t);
+      bigHead(fgOf(ctx), DAUGHTER, hx, hy, 14, { facing: 1, head: -0.2 + Math.sin(t * 2) * 0.03, mouth: t < 3.2 ? 'open' : 'smile', eyesUp: true, wind: 0.2, armF: [0.3, 0.4] }, t);
     }
   },
 };

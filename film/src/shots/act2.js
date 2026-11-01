@@ -3,7 +3,7 @@ import { drawMaster } from '../world/master.js';
 import { Camera } from '../core/camera.js';
 import { track, prog, clamp, lerp, Ease, TAU, mixv } from '../core/math.js';
 import { noise1 } from '../core/noise.js';
-import { rgba, inkRGB, whiteOf, blob, line } from '../ink/brush.js';
+import { rgba, inkRGB, whiteOf, blob, line, fgOf } from '../ink/brush.js';
 import { GRANDPA, GIRL9, GIRL12, TEEN, WOMAN_MOURN } from '../actors/cast.js';
 import { POSE, walk, run } from '../actors/rig.js';
 import { drawKite, drawString, drawReel, kiteBridle, drawSwallowGlyph } from '../actors/props.js';
@@ -130,7 +130,7 @@ export const S11 = {
     const press = prog(t, 0.6, 1.2, 'outCubic') * (1 - prog(t, 2.2, 2.8, 'inCubic'));
     if (press > 0) {
       const hand = [lerp(1500, 1010, press), lerp(1150, 610, press)];
-      drawArmIn(ctx, [hand[0] + 300, hand[1] + 260], hand, 120, SLEEVE);
+      drawArmIn(fgOf(ctx), [hand[0] + 300, hand[1] + 260], hand, 120, SLEEVE);
     }
     // 毛笔画小燕子
     const brush = prog(t, 2.5, 3.0, 'outCubic') * (1 - prog(t, 5.0, 5.6, 'inCubic'));
@@ -138,9 +138,9 @@ export const S11 = {
       const u = prog(t, 2.9, 4.8);
       const tip = [960 + Math.sin(u * TAU * 1.5) * 70, 545 + Math.cos(u * TAU * 3) * 18 - u * 10];
       const tp = [lerp(1700, tip[0], brush), lerp(0, tip[1], brush)];
-      drawBrushTool(ctx, tp, -0.95, 380);
+      drawBrushTool(fgOf(ctx), tp, -0.95, 380);
       const hand = [tp[0] + Math.cos(-0.95) * 290, tp[1] + Math.sin(-0.95) * 290];
-      drawArmIn(ctx, [hand[0] + 300, hand[1] - 240], hand, 110, SLEEVE);
+      drawArmIn(fgOf(ctx), [hand[0] + 300, hand[1] - 240], hand, 110, SLEEVE);
     }
   },
 };

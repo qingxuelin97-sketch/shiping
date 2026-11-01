@@ -33,6 +33,27 @@ export function whiteOf(ctx) {
   return w;
 }
 
+// 前景层（人物、道具）：与 ctx 同变换。没有前景层时退回 ctx 本身。
+export function fgOf(ctx) {
+  const f = ctx.fg;
+  if (!f || f === ctx) return ctx;
+  f.setTransform(ctx.getTransform());
+  f.globalAlpha = 1;
+  f.globalCompositeOperation = 'source-over';
+  f.filter = 'none';
+  return f;
+}
+// 背景层（接触影等）：与 ctx 同变换
+export function bgOf(ctx) {
+  const b = ctx.bg;
+  if (!b || b === ctx) return ctx;
+  b.setTransform(ctx.getTransform());
+  b.globalAlpha = 1;
+  b.globalCompositeOperation = 'source-over';
+  b.filter = 'none';
+  return b;
+}
+
 // 统一的墨色混合：墨用 multiply 叠加，越叠越深
 export function inkMode(ctx) { ctx.globalCompositeOperation = 'multiply'; }
 export function normalMode(ctx) { ctx.globalCompositeOperation = 'source-over'; }

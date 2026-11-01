@@ -55,6 +55,16 @@ export const Ease = {
     const c4 = TAU / 3;
     return t === 0 ? 0 : t === 1 ? 1 : Math.pow(2, -10 * t) * Math.sin((t * 10 - 0.75) * c4) + 1;
   },
+  // 表演用：先反向预备一下，再过冲、回稳
+  anticip: (t) => {
+    const a = 0.22;
+    if (t < a) return -0.1 * Math.sin((t / a) * Math.PI);
+    const u = (t - a) / (1 - a);
+    const c1 = 1.4, c3 = c1 + 1;
+    return 1 + c3 * Math.pow(u - 1, 3) + c1 * Math.pow(u - 1, 2);
+  },
+  // 过冲后轻微回弹
+  settle: (t) => (t >= 1 ? 1 : 1 - Math.exp(-6.5 * t) * Math.cos(8.5 * t)),
 };
 
 // 数字、数组、对象逐分量插值

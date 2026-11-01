@@ -2,7 +2,7 @@
 // 中景/近景只是把相机推近。
 import { Camera, applyCamera } from '../core/camera.js';
 import { lerp } from '../core/math.js';
-import { inkRGB } from '../ink/brush.js';
+import { inkRGB, fgOf } from '../ink/brush.js';
 import { MASTER_RANGES, drawRange, drawMist } from './mountains.js';
 import { drawHill, drawBank, drawPath, drawRoad, drawCottage, drawGrass, drawSky } from './landscape.js';
 import { drawPetals, drawLeavesFalling, drawSnowfall } from './particles.js';
@@ -61,13 +61,16 @@ export function drawMaster(ctx, t, R, o = {}) {
     autumn: o.autumn ?? (season === 'autumn' ? 1 : 0),
     snow,
   });
-  if (o.actors) { ctx.save(); o.actors(ctx); ctx.restore(); }
-  drawGrass(ctx, t, { wind: o.wind ?? 0.6, color: S.grass, colorAmt: season === 'winter' ? 0.2 : 0.65 });
-  if (o.petals) drawPetals(ctx, t, { region: o.petalRegion || [500, 150, 1900, 1000], count: o.petals, vx: -(o.petalWind ?? 70), vy: 32, seed: 3, size: o.petalSize ?? 3.2 });
-  if (o.fallingLeaves) drawLeavesFalling(ctx, t, { region: [800, 300, 1800, 950], count: o.fallingLeaves, vx: -30, vy: 45 });
-  if (o.front) { ctx.save(); o.front(ctx); ctx.restore(); }
+  // 以下进入前景层：人物、道具、前景草、花瓣落叶、雪
+  const F = fgOf(ctx);
+  if (o.actors) { F.save(); o.actors(F); F.restore(); }
+  drawGrass(fgOf(ctx), t, { wind: o.wind ?? 0.6, color: S.grass, colorAmt: season === 'winter' ? 0.2 : 0.65 });
+  if (o.petals) drawPetals(fgOf(ctx), t, { region: o.petalRegion || [500, 150, 1900, 1000], count: o.petals, vx: -(o.petalWind ?? 70), vy: 32, seed: 3, size: o.petalSize ?? 3.2 });
+  if (o.fallingLeaves) drawLeavesFalling(fgOf(ctx), t, { region: [800, 300, 1800, 950], count: o.fallingLeaves, vx: -30, vy: 45 });
+  if (o.front) { const G = fgOf(ctx); G.save(); o.front(G); G.restore(); }
   if (o.snowfall) {
-    ctx.setTransform(R.base, 0, 0, R.base, 0, 0);
-    drawSnowfall(ctx, t, { region: [0, 0, 1920, 1080], count: o.snowfall, vx: -(o.snowWind ?? 18), vy: 50, size: 3.2 });
+    const G = fgOf(ctx);
+    G.setTransform(R.base, 0, 0, R.base, 0, 0);
+    drawSnowfall(G, t, { region: [0, 0, 1920, 1080], count: o.snowfall, vx: -(o.snowWind ?? 18), vy: 50, size: 3.2 });
   }
 }
