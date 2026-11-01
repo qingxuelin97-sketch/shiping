@@ -2,7 +2,8 @@
 // 中景/近景只是把相机推近。
 import { Camera, applyCamera } from '../core/camera.js';
 import { lerp } from '../core/math.js';
-import { inkRGB, fgOf } from '../ink/brush.js';
+import { inkRGB, fgOf, whiteOf } from '../ink/brush.js';
+import { frameBranch, drawBeams } from './frame.js';
 import { MASTER_RANGES, drawRange, drawMist } from './mountains.js';
 import { drawHill, drawBank, drawPath, drawRoad, drawCottage, drawGrass, drawSky } from './landscape.js';
 import { drawPetals, drawLeavesFalling, drawSnowfall } from './particles.js';
@@ -61,10 +62,12 @@ export function drawMaster(ctx, t, R, o = {}) {
     autumn: o.autumn ?? (season === 'autumn' ? 1 : 0),
     snow,
   });
+  // 透过树冠的光束（背景白粉层）
+  if (o.beams) drawBeams(whiteOf(ctx), t, o.beams, o.beamOpts || {});
   // 以下进入前景层：人物、道具、前景草、花瓣落叶、雪
   const F = fgOf(ctx);
   if (o.actors) { F.save(); o.actors(F); F.restore(); }
-  drawGrass(fgOf(ctx), t, { wind: o.wind ?? 0.6, color: S.grass, colorAmt: season === 'winter' ? 0.2 : 0.65 });
+  if (!o.noGrass) drawGrass(fgOf(ctx), t, { wind: o.wind ?? 0.6, color: S.grass, colorAmt: season === 'winter' ? 0.2 : 0.65 });
   if (o.petals) drawPetals(fgOf(ctx), t, { region: o.petalRegion || [500, 150, 1900, 1000], count: o.petals, vx: -(o.petalWind ?? 70), vy: 32, seed: 3, size: o.petalSize ?? 3.2 });
   if (o.fallingLeaves) drawLeavesFalling(fgOf(ctx), t, { region: [800, 300, 1800, 950], count: o.fallingLeaves, vx: -30, vy: 45 });
   if (o.front) { const G = fgOf(ctx); G.save(); o.front(G); G.restore(); }
@@ -72,5 +75,10 @@ export function drawMaster(ctx, t, R, o = {}) {
     const G = fgOf(ctx);
     G.setTransform(R.base, 0, 0, R.base, 0, 0);
     drawSnowfall(G, t, { region: [0, 0, 1920, 1080], count: o.snowfall, vx: -(o.snowWind ?? 18), vy: 50, size: 3.2 });
+  }
+  // 镜头前虚化的花枝（前景框）
+  if (o.frame) {
+    const list = Array.isArray(o.frame) ? o.frame : [o.frame];
+    for (const fr of list) frameBranch(fgOf(ctx), R, { t, wind: o.wind ?? 0.6, ...fr });
   }
 }

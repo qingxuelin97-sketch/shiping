@@ -30,7 +30,7 @@ export const S17 = {
     const cam = new Camera(lerp(1066, 1110, u), lerp(572, 520, u), lerp(3.2, 1.75, u));
     const melt = prog(t, 0.5, 5.2, 'inOutSine');
     drawMaster(ctx, t + 260, R, {
-      cam, season: 'spring', snow: 1 - melt, bloom: 1, bloomWave: prog(t, 0.8, 6.8), leaves: 0, wind: 0.4,
+      cam, season: 'spring', snow: 1 - melt, bloom: 1, bloomWave: prog(t, 0.8, 6.8), leaves: 0, wind: 0.4, beams: melt * 0.9,
       sky: { top: [lerp(212, 240, melt), lerp(218, 240, melt), lerp(226, 238, melt)], topAlpha: lerp(0.85, 0.6, melt) },
       petals: Math.round(prog(t, 5.5, 8) * 16),
       snowfall: Math.round((1 - prog(t, 0, 2.5)) * 60),
@@ -52,7 +52,7 @@ export const S18 = {
     const u = prog(t, 0, 8, 'inOutSine');
     const cam = new Camera(lerp(960, 1000, u), lerp(540, 548, u), lerp(1.0, 1.06, u));
     drawMaster(ctx, t + 300, R, {
-      cam, season: 'spring', smoke: 0, petals: 18, wind: 0.5,
+      cam, season: 'spring', smoke: 0, petals: 18, wind: 0.5, beams: 0.6,
       actors: (c) => {
         stool(c);
         caughtKiteDraw(c, t, { aged: 0.6, thread: 34 });
@@ -79,6 +79,7 @@ export const S19 = {
   id: 'S19',
   dur: 8,
   amb: 'spring',
+  post: (t) => ({ dof: lerp(0.45, 0.9, prog(t, 3, 7.4)), dofRadius: lerp(3.5, 6, prog(t, 3, 7.4)) }),
   cues: [{ t: 1.5, kind: 'hit', name: 'point' }, { t: 5.6, kind: 'hit', name: 'patch' }],
   render(ctx, t, R) {
     let cam;
@@ -91,6 +92,8 @@ export const S19 = {
     }
     drawMaster(ctx, t + 320, R, {
       cam, season: 'spring', petals: 12, petalSize: 2.6, wind: 0.45, petalRegion: [900, 450, 1400, 820],
+      // 镜头推近时，前景花枝向画外滑走
+      frame: { corner: 'tr', kind: 'blossom', len: 520, dip: 0.3, blur: 14, alpha: 0.9, seed: 3, shift: [prog(t, 3, 6.2, 'inQuad') * 520, -prog(t, 3, 6.2, 'inQuad') * 380] },
       actors: (c) => {
         stool(c);
         const K = caughtKiteDraw(c, t, { aged: 0.6, thread: 40, threadW: 0.6 });
@@ -112,7 +115,7 @@ function womanFace(id, dur, o = {}) {
     id,
     dur,
     amb: 'spring',
-    post: { vig: 0.75 },
+    post: { vig: 0.75, dof: 1, dofRadius: 6 },
     cues: o.cues || [],
     render(ctx, t, R) {
       const pose = { ...POSE.lookUp, head: -0.55, x: W_POS.x, y: ground(W_POS.x), facing: 1, mouth: o.mouth ? o.mouth(t) : 'line', eyesUp: true };
@@ -159,11 +162,13 @@ export const S21A = {
   id: 'S21A',
   dur: 4.6,
   amb: 'spring',
+  post: { dof: 0.45, dofRadius: 3.5 },
   cues: [{ t: 2.3, kind: 'sfx', name: 'rustle' }],
   render(ctx, t, R) {
     const cam = new Camera(1120, 610, 2.9);
     drawMaster(ctx, t + 360, R, {
       cam, season: 'spring', petals: 14, petalSize: 2.6, wind: 0.45, petalRegion: [920, 450, 1350, 800],
+      frame: { corner: 'tl', kind: 'blossom', len: 560, dip: 0.3, blur: 14, alpha: 0.9, seed: 12 },
       actors: (c) => {
         stool(c);
         const took = t > 2.4;
@@ -210,8 +215,8 @@ export const S21B = {
     const knot = prog(t, 1.8, 2.5, 'outBack');
     if (knot > 0) drawKnot(F, [960, 545], 14 * knot);
     const pull = prog(t, 2.5, 3.2, 'outCubic');
-    drawArmIn(fgOf(ctx), [L[0] - 260 - pull * 30, L[1] + 330], [L[0] - 50 - pull * 30, L[1] + 40], 110, W_SLEEVE);
-    drawArmIn(fgOf(ctx), [Rr[0] + 300 + pull * 30, Rr[1] + 360], [Rr[0] + 50 + pull * 30, Rr[1] + 40], 110, W_SLEEVE);
+    drawArmIn(fgOf(ctx), [L[0] - 260 - pull * 30, L[1] + 330], [L[0] - 50 - pull * 30, L[1] + 40], 110, W_SLEEVE, 1, { curl: 0.7, thumb: 0.65, seed: 5 });
+    drawArmIn(fgOf(ctx), [Rr[0] + 300 + pull * 30, Rr[1] + 360], [Rr[0] + 50 + pull * 30, Rr[1] + 40], 110, W_SLEEVE, 1, { curl: 0.7, thumb: 0.65, seed: 6 });
   },
 };
 
@@ -286,17 +291,22 @@ export const S24 = {
   id: 'S24',
   dur: 6,
   amb: 'spring',
+  post: { dof: 0.5, dofRadius: 3.5 },
   cues: [{ t: 0.8, kind: 'hit', name: 'ghost' }, { t: 3.5, kind: 'sfx', name: 'gust_petals' }],
   render(ctx, t, R) {
     const cam = new Camera(1080, 632, 3.0).withShake(t, 1, 0.3, 4);
     const gust = prog(t, 3.2, 4.2) * (1 - prog(t, 5.2, 6));
     drawMaster(ctx, t + 420, R, {
-      cam, season: 'spring', wind: 0.5 + gust, petals: Math.round(14 + gust * 60), petalSize: 2.4, petalWind: 70 + gust * 160, petalRegion: [880, 480, 1320, 800],
+      cam, season: 'spring', wind: 0.5 + gust, petals: Math.round(14 + gust * 60), petalSize: 2.4, petalWind: 70 + gust * 160, petalRegion: [880, 480, 1320, 800], beams: 0.8,
+      frame: { corner: 'tr', kind: 'blossom', len: 500, dip: 0.3, blur: 14, alpha: 0.9, seed: 14 },
       actors: (c) => {
         stool(c);
         const ga = envelope(t, 1.6, 3.4, 1.2, 1.6) * 0.42;
         if (ga > 0.005) {
-          GRANDPA.draw(c, { ...POSE.lookUp, head: -0.6, lean: 0.12, x: 1150, y: ground(1150), facing: -1, mouth: 'smile', alpha: ga }, t);
+          // 淡墨的爷爷：微笑着，轻轻抬手（像当年那样），随后在一阵花瓣里散去
+          const wv = envelope(t, 2.0, 3.0, 0.5, 0.5);
+          const arm = [lerp(0.15, -2.2 + Math.sin(t * 6) * 0.18, Ease.inOutSine(wv)), lerp(0.2, -0.25, wv)];
+          GRANDPA.draw(c, { ...POSE.lookUp, armF: arm, head: lerp(-0.6, -0.15, prog(t, 1.4, 2.4)), lean: 0.12, x: 1150, y: ground(1150), facing: -1, smile: 0.9, alpha: ga }, t);
           if (t > 3.4) {
             drawPetals(c, t, { region: [1110, 590, 1190, 720], count: Math.round(18 * (1 - prog(t, 3.4, 5.6))), vx: -120, vy: -10, seed: 33, size: 2.2 });
           }
@@ -315,13 +325,13 @@ export const S25 = {
   id: 'S25',
   dur: 8,
   amb: 'spring',
-  post: (t) => ({ fade: prog(t, 4.2, 7.8, 'inOutSine') }),
+  post: (t) => { const g = prog(t, 0.5, 5.5, 'inOutSine'); return { fade: prog(t, 4.2, 7.8, 'inOutSine'), tint: [1 + g * 0.05, 1 + g * 0.01, 1 - g * 0.07], fgTint: [1 + g * 0.03, 1, 1 - g * 0.04] }; },
   cues: [{ t: 4.2, kind: 'hit', name: 'fade' }],
   render(ctx, t, R) {
     const u = prog(t, 0, 8, 'inOutSine');
     const cam = new Camera(lerp(980, 900, u), lerp(530, 500, u), lerp(1.04, 0.98, u));
     drawMaster(ctx, t + 440, R, {
-      cam, season: 'spring', wind: 0.55, smoke: 0.6, petals: 22,
+      cam, season: 'spring', wind: 0.55, smoke: 0.6, petals: 22, beams: 0.6 + prog(t, 0, 5) * 0.8, beamOpts: { alpha: 0.16 },
       actors: (c) => {
         stool(c);
         WOMAN.draw(c, { ...POSE.lookUp, x: 1062, y: ground(1062), facing: -1, mouth: 'smile' }, t);

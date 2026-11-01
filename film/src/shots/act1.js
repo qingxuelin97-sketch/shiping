@@ -8,7 +8,7 @@ import { track, prog, clamp, lerp, Ease, TAU, mixv } from '../core/math.js';
 import { noise1, hash } from '../core/noise.js';
 import { blob, rgba, inkRGB, softDot, fgOf } from '../ink/brush.js';
 import { GRANDPA, GIRL6 } from '../actors/cast.js';
-import { POSE, walk, run } from '../actors/rig.js';
+import { POSE, walk, run, hop, withVel } from '../actors/rig.js';
 import { drawKite, drawString, drawReel, kiteBridle, kiteFrameTip, kitePaintTip, drawFlock, drawKnot } from '../actors/props.js';
 import { ground, STOOL_X, stoolY, SEAT, stool, pathAt, depthScale, scaled, kiteWobble, inkText, seal, insertBg, drawBrushTool, drawArmIn } from './common.js';
 import { C } from '../world/palette.js';
@@ -92,7 +92,7 @@ export const S02 = {
     const k = prog(t, 0, 8, 'inOutSine');
     const cam = new Camera(lerp(960, 1000, k), lerp(540, 552, k), lerp(1.0, 1.07, k));
     drawMaster(ctx, t + 20, R, {
-      cam, season: 'spring', smoke: 1, petals: 16, wind: 0.5,
+      cam, season: 'spring', smoke: 1, petals: 16, wind: 0.5, beams: 0.6,
       actors: (c) => {
         const walker = (fig, s0, s1, extra = {}) => {
           const s = lerp(s0, s1, t / 8);
@@ -201,36 +201,46 @@ const KITE_HOLD = (J) => {
 export const S05 = {
   id: 'S05',
   dur: 8,
-  cues: [{ t: 0.6, kind: 'hit', name: 'raise' }, { t: 1.0, kind: 'sfx', name: 'jump' }, { t: 1.9, kind: 'sfx', name: 'jump' }, { t: 4.9, kind: 'hit', name: 'handover' }],
+  post: { dof: 0.45, dofRadius: 3.5 },
+  cues: [{ t: 0.62, kind: 'hit', name: 'raise' }, { t: 0.55, kind: 'sfx', name: 'jump' }, { t: 1.6, kind: 'sfx', name: 'jump' }, { t: 2.75, kind: 'sfx', name: 'clap' }, { t: 4.9, kind: 'hit', name: 'handover' }],
   render(ctx, t, R) {
     const cam = new Camera(1176, 664, 3.3).withShake(t, 1.2, 0.3, 5);
     drawMaster(ctx, t + 40, R, {
-      cam, season: 'spring', wind: 0.4, petals: 12, petalSize: 2.4, petalRegion: [1000, 520, 1400, 800],
+      cam, season: 'spring', wind: 0.4, petals: 12, petalSize: 2.4, petalRegion: [1000, 520, 1400, 800], beams: 0.7,
+      frame: { corner: 'tr', kind: 'blossom', len: 470, dip: 0.3, blur: 14, alpha: 0.92, seed: 2 },
       actors: (c) => {
         stool(c);
-        const UP = { ...POSE.sit, armF: [-2.65, 0.25], armB: [-2.5, 0.3], head: -0.35 };
+        // 爷爷：先把风筝往怀里一收（预备），再举过头顶（过冲、回稳）；放下；递出线拐子
+        const PRE = { ...POSE.sit, armF: [-1.2, 0.85], armB: [-1.1, 0.9], head: -0.05, lean: 0.14 };
+        const UP = { ...POSE.sit, armF: [-2.65, 0.25], armB: [-2.5, 0.3], head: -0.35, lean: -0.02 };
         const LAP = { ...POSE.sit, armF: [0.6, 0.7], armB: [0.5, 0.75], head: 0.05 };
-        const GIVE = { ...POSE.sit, armF: [1.2, 0.25], armB: [0.5, 0.75], head: 0.1, lean: 0.14 };
-        const gp = track([[0, { ...UP, armF: [-1.6, 0.5], armB: [-1.5, 0.5] }, 'outBack'], [0.7, UP], [3.0, UP], [3.7, LAP], [4.2, LAP], [4.8, GIVE], [5.6, GIVE], [6.4, LAP]], t);
+        const GIVE = { ...POSE.sit, armF: [1.2, 0.25], armB: [0.5, 0.75], head: 0.12, lean: 0.16 };
+        const gp = track([[0, PRE], [0.25, PRE, 'anticip'], [0.9, UP], [3.0, UP, 'inOutSine'], [3.7, LAP], [4.2, LAP, 'inOutSine'], [4.8, GIVE, 'settle'], [5.6, GIVE, 'inOutSine'], [6.4, LAP]], t);
         const gx = STOOL_X + 3, gy = stoolY();
-        const J = GRANDPA.draw(c, { ...gp, x: gx, y: gy, sit: SEAT, facing: -1, mouth: 'smile' }, t);
+        const J = GRANDPA.draw(c, { ...gp, x: gx, y: gy, sit: SEAT, facing: -1, smile: t < 4.2 ? 0.95 : 0.8, rim: { dir: [0.6, -0.8], col: [255, 236, 206], a: 0.4, w: 1.4 } }, t);
         if (t < 3.6) {
           const k = KITE_HOLD(J);
           drawKite(c, { ...k, rot: Math.sin(t * 2.4) * 0.06, lineW: 0.9 });
         } else {
           drawKite(c, { x: gx + 34, y: gy - 30, size: 40, rot: 0.42, lineW: 0.9 });
         }
-        // 小燕
-        const girlX = 1150, girlY = ground(girlX);
-        let gpose;
-        if (t < 3.4) {
-          const ph = (t * 1.1) % 1;
-          gpose = mixv(POSE.stand, POSE.jump, Math.sin(ph * Math.PI));
-          gpose = { ...gpose, lift: Math.sin(ph * Math.PI) * 12, mouth: 'open' };
-        } else {
-          gpose = track([[3.4, { ...POSE.stand, mouth: 'open' }], [4.6, { ...POSE.reach, mouth: 'open' }], [5.3, { ...POSE.reach, mouth: 'smile' }], [6.0, { ...POSE.hug, eyesDown: false, mouth: 'smile', head: -0.1 }]], t);
-        }
-        const GJ = GIRL6.draw(c, { ...gpose, x: girlX, y: girlY, facing: 1, wind: 0.6 }, t);
+        // 小燕：两次起跳（预备下蹲、腾空、落地缓冲）→ 拍手 → 伸手接 → 抱在怀里
+        const girlX = 1150;
+        const gpose = (tt) => {
+          let q;
+          if (tt < 0.3) q = { ...POSE.stand, expr: 'joy' };
+          else if (tt < 2.5) {
+            const ph = ((tt - 0.3) / 1.1) % 1;
+            q = { ...hop(ph, { height: 14 }), expr: 'joy' };
+          } else if (tt < 3.4) {
+            const cl = Math.abs(Math.sin((tt - 2.5) * Math.PI * 3.2));
+            q = { ...mixv(POSE.clap, { ...POSE.clap, armF: [0.7, 0.9], armB: [0.6, 1.0] }, cl), expr: 'laugh' };
+          } else {
+            q = track([[3.4, { ...POSE.stand, expr: 'joy' }], [4.0, { ...POSE.stand, lean: -0.04, expr: 'joy' }, 'anticip'], [4.6, { ...POSE.reach, expr: 'joy' }], [5.3, { ...POSE.reach, expr: 'happy' }, 'inOutSine'], [6.0, { ...POSE.hug, eyesDown: false, expr: 'happy', head: -0.1 }]], tt);
+          }
+          return { ...q, x: girlX, y: ground(girlX), facing: 1, wind: 0.6 };
+        };
+        const GJ = GIRL6.draw(c, withVel(gpose, t), t);
         // 线拐子：先在爷爷手里，5.2 秒后到小燕怀里
         const reelP = t < 5.2 ? (t < 4.2 ? null : J.armF.hand) : [(GJ.armF.hand[0] + GJ.armB.hand[0]) / 2, (GJ.armF.hand[1] + GJ.armB.hand[1]) / 2];
         if (reelP) drawReel(c, reelP[0], reelP[1] - 2, 7, 0.2);
@@ -241,10 +251,12 @@ export const S05 = {
 };
 
 // ---------------- S06 初飞：栽跟头 → 爷爷托起 → 起飞 ----------------
+const LAUNCH_DIP = { ...POSE.holdUp, armF: [-2.45, 0.55], armB: [-2.3, 0.6], lean: 0.08, legF: [0.28, 0.35], legB: [0.02, 0.3] };
 export function launchShot(id, FLYER, HELPER, o = {}) {
   return {
     id,
     dur: 12,
+    post: { dof: 0.3, dofRadius: 3 },
     cues: [{ t: 0.6, kind: 'sfx', name: 'run' }, { t: 3.0, kind: 'sfx', name: 'crash' }, { t: 3.0, kind: 'hit', name: 'crash' }, { t: 7.2, kind: 'hit', name: 'release' }, { t: 7.3, kind: 'sfx', name: 'whoosh' }, { t: 9.5, kind: 'sfx', name: 'flutter' }],
     render(ctx, t, R) {
       const cz = track([[0, [1130, 656, 2.35]], [7.0, [1120, 648, 2.35]], [11.5, [1010, 560, 1.85]]], t);
@@ -259,10 +271,14 @@ export function launchShot(id, FLYER, HELPER, o = {}) {
             fx = lerp(1060, 1320, prog(t, 0.5, 3.4, 'inOutSine'));
             ffacing = 1;
             const ph = Math.max(0, (fx - 1060)) / 42;
-            fpose = t < 0.5 ? POSE.holdReel : { ...run(ph, { stride: 0.62 }), head: -0.05, armF: [0.9, 0.5] };
+            fpose = t < 0.5 ? { ...POSE.holdReel, expr: 'joy' } : { ...run(ph, { stride: 0.62 }), head: -0.05, armF: [0.9, 0.5], expr: 'joy' };
+            // 风筝栽下去：刹住脚、身子往后一仰
+            const brake = prog(t, 2.95, 3.38, 'outQuad');
+            if (brake > 0) fpose = { ...mixv(fpose, { ...POSE.stand, lean: -0.14, head: -0.05, armF: [0.6, 0.5], armB: [-0.3, 0.3] }, brake), expr: 'surprised' };
           } else if (t < 5.0) {
             fx = 1320; ffacing = -1;
-            fpose = { ...POSE.stand, mouth: 'sad', head: 0.25, armF: [0.5, 0.6] };
+            // 回头看：先愣住，再垂头丧气
+            fpose = track([[3.4, { ...POSE.stand, head: 0.05, lean: -0.04, armF: [0.5, 0.5], expr: 'surprised' }], [3.75, { ...POSE.stand, head: 0.05, expr: 'surprised' }], [4.3, { ...POSE.stand, head: 0.3, lean: 0.12, armF: [0.15, 0.25], armB: [0.05, 0.25], shrug: -1.2, expr: 'sad' }, 'inOutSine']], t);
           } else if (t < 7.2) {
             fx = lerp(1320, 1360, prog(t, 5.0, 7.2));
             ffacing = -1;
@@ -292,13 +308,15 @@ export function launchShot(id, FLYER, HELPER, o = {}) {
             hx = lerp(1150, 1060, prog(t, 5.2, 6.4));
             hfacing = 1;
             hpose = { ...walk((1150 - hx) / 95, { stride: 0.34 }), armF: [-2.7, 0.2], armB: [-2.55, 0.3], head: -0.3 };
-          } else if (t < 7.2) {
+          } else if (t < 7.15) {
             hx = 1060; hfacing = 1;
-            hpose = { ...POSE.holdUp, mouth: 'smile' };
+            // 托举前先往下一沉（预备）
+            hpose = { ...track([[6.4, POSE.holdUp], [6.75, POSE.holdUp], [7.15, LAUNCH_DIP, 'inOutSine']], t), mouth: 'smile' };
           } else {
             hx = 1060; hfacing = 1;
-            const push = prog(t, 7.2, 7.7, 'outCubic');
-            hpose = mixv(POSE.holdUp, { ...POSE.holdUp, armF: [-3.0, 0.0], armB: [-2.9, 0.05], lean: -0.12 }, push * (1 - prog(t, 8.2, 9.6)));
+            const push = prog(t, 7.15, 7.6, 'outCubic');
+            const thrust = { ...POSE.holdUp, armF: [-3.0, 0.0], armB: [-2.9, 0.05], lean: -0.12 };
+            hpose = push < 1 ? mixv(LAUNCH_DIP, thrust, push) : mixv(thrust, POSE.holdUp, prog(t, 8.2, 9.6));
             if (t > 8.6) hpose = mixv(hpose, { ...POSE.lookUp, mouth: 'open' }, prog(t, 8.6, 9.6));
           }
           const HJ = HELPER.draw(c, { ...hpose, x: hx, y: ground(hx), facing: hfacing }, t);
@@ -397,7 +415,8 @@ export const S09 = {
   render(ctx, t, R) {
     const cam = new Camera(980, 520, 1.02 - t * 0.003);
     drawMaster(ctx, t + 90, R, {
-      cam, season: 'spring', wind: 0.5, smoke: 0.6, petals: 20,
+      cam, season: 'spring', wind: 0.5, smoke: 0.6, petals: 20, beams: 0.9,
+      frame: { corner: 'tl', kind: 'blossom', len: 640, dip: 0.28, blur: 14, alpha: 0.95, seed: 9 },
       actors: (c) => {
         stool(c);
         GRANDPA.draw(c, { ...POSE.sit, x: STOOL_X + 3, y: stoolY(), sit: SEAT, facing: -1, head: -0.3, armF: [0.4, 0.9] }, t);

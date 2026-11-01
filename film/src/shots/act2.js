@@ -1,11 +1,11 @@
 // 第二幕 · 夏秋冬：挂破、补丁、独自放飞、离家、三个春天、最后一次、雪中
 import { drawMaster } from '../world/master.js';
 import { Camera } from '../core/camera.js';
-import { track, prog, clamp, lerp, Ease, TAU, mixv } from '../core/math.js';
+import { track, prog, clamp, lerp, Ease, TAU, mixv, envelope } from '../core/math.js';
 import { noise1 } from '../core/noise.js';
 import { rgba, inkRGB, whiteOf, blob, line, fgOf } from '../ink/brush.js';
 import { GRANDPA, GIRL9, GIRL12, TEEN, WOMAN_MOURN } from '../actors/cast.js';
-import { POSE, walk, run } from '../actors/rig.js';
+import { POSE, walk, run, withVel } from '../actors/rig.js';
 import { drawKite, drawString, drawReel, kiteBridle, drawSwallowGlyph } from '../actors/props.js';
 import { ground, STOOL_X, stoolY, SEAT, stool, pathAt, depthScale, scaled, kiteWobble, insertBg, drawBrushTool, drawArmIn, drawBus, dust, caughtKite } from './common.js';
 import { ROAD_Y } from '../world/landscape.js';
@@ -75,7 +75,7 @@ export const S10 = {
   id: 'S10',
   dur: 8,
   amb: 'summer',
-  post: { tint: [1.03, 0.99, 0.93] },
+  post: { tint: [1.03, 0.99, 0.93], fgTint: [1.03, 0.98, 0.93] },
   cues: [{ t: 3.1, kind: 'sfx', name: 'gust' }, { t: 4.9, kind: 'sfx', name: 'tear' }, { t: 4.9, kind: 'hit', name: 'snag' }, { t: 5.9, kind: 'sfx', name: 'run' }],
   render(ctx, t, R) {
     const cam = new Camera(lerp(880, 930, prog(t, 0, 8)), lerp(470, 520, prog(t, 0, 8)), lerp(1.45, 1.6, prog(t, 0, 8)));
@@ -92,8 +92,9 @@ export const S10 = {
         }
         const hx = lerp(1120, 1085, prog(t, 6.0, 8));
         const hp = t < 6.0 ? { ...POSE.lookUp, mouth: 'smile' } : walk((1120 - hx) / 90, { stride: 0.3 });
-        GRANDPA.draw(c, { ...hp, x: hx, y: ground(hx), facing: -1 }, t);
-        const FJ = GIRL9.draw(c, { ...gp, x: gx, y: ground(gx), facing: -1, wind: 0.8 }, t);
+        const RIM = { dir: [-0.95, -0.1], col: [255, 196, 140], a: 0.7, w: 1.5 };
+        GRANDPA.draw(c, { ...hp, x: hx, y: ground(hx), facing: -1, rim: RIM }, t);
+        const FJ = GIRL9.draw(c, { ...gp, x: gx, y: ground(gx), facing: -1, wind: 0.8, rim: RIM }, t);
         drawReel(c, FJ.armF.hand[0], FJ.armF.hand[1], 6, 0.4);
         let K;
         const wb = kiteWobble(t + 5, 4);
@@ -130,7 +131,7 @@ export const S11 = {
     const press = prog(t, 0.6, 1.2, 'outCubic') * (1 - prog(t, 2.2, 2.8, 'inCubic'));
     if (press > 0) {
       const hand = [lerp(1500, 1010, press), lerp(1150, 610, press)];
-      drawArmIn(fgOf(ctx), [hand[0] + 300, hand[1] + 260], hand, 120, SLEEVE);
+      drawArmIn(fgOf(ctx), [hand[0] + 300, hand[1] + 260], hand, 120, SLEEVE, 1, { curl: 0.12, thumb: 0.15 });
     }
     // 毛笔画小燕子
     const brush = prog(t, 2.5, 3.0, 'outCubic') * (1 - prog(t, 5.0, 5.6, 'inCubic'));
@@ -168,7 +169,7 @@ export const S12 = {
           gx = 1120; gf = -1;
           gp = { ...POSE.holdReel, head: -0.55, mouth: t > 6 ? 'open' : 'smile' };
         }
-        const FJ = GIRL12.draw(c, { ...gp, x: gx, y: ground(gx), facing: gf, wind: 0.9 }, t);
+        const FJ = GIRL12.draw(c, { ...gp, x: gx, y: ground(gx), facing: gf, wind: 0.9, rim: { dir: [-0.8, -0.5], col: [255, 214, 160], a: 0.5, w: 1.2 } }, t);
         drawReel(c, FJ.armF.hand[0], FJ.armF.hand[1], 6.5, 0.4);
         const u = prog(t, 1.2, 8, 'inOutSine');
         const wb = kiteWobble(t + 9, 5, prog(t, 3, 6));
@@ -181,46 +182,69 @@ export const S12 = {
 };
 
 // ---------------- S13 离家：小燕下山，回头挥手，汽车远去 ----------------
+// 剪辑：S13（0–10.6）→ 特写 S13B → S13C（爷爷的手已放下，汽车远去）
+function renderS13(ctx, t, R, after = false) {
+  const u = prog(t, 0, 14, 'inOutSine');
+  const cam = new Camera(lerp(950, 990, u), lerp(588, 580, u), lerp(1.0, 1.04, u));
+  drawMaster(ctx, t + 150, R, {
+    cam, season: 'summer', wind: 0.35, smoke: 0.8, sky: { horizon: [250, 236, 216], horAlpha: 0.45 }, beams: 0.35, beamOpts: { alpha: 0.1 },
+    actors: (c) => {
+      stool(c);
+      // 汽车（特写之后时间往前多走一些）
+      const tb = after ? t + 1.8 : t;
+      const bx = tb < 9.8 ? 640 : lerp(640, -260, prog(tb, 9.8, 13.6, 'inQuad'));
+      const by = ROAD_Y(bx) + 10;
+      if (tb > 9.9) dust(c, bx + 50, by - 4, tb, 1 - prog(tb, 12.5, 14));
+      drawBus(c, bx, by, 1.6, 1, tb);
+      // 爷爷：夹着风筝站在坡顶。她回头挥手时也挥；车开时再挥（接特写）；特写之后手已放下
+      let gp;
+      if (after) gp = { ...POSE.stand, armF: [0.12, 0.34], lean: 0.13, head: 0.13, smile: -0.12, tilt: -0.32 };
+      else {
+        const w = Math.max(envelope(t, 5.3, 6.45, 0.4, 0.45), envelope(t, 10.25, 12, 0.45, 0.3));
+        const osc = Math.sin(t * 8.5) * 0.24;
+        const k = Ease.inOutSine(w);
+        gp = { ...POSE.stand, armF: [lerp(0.12, -2.45 + osc, k), lerp(0.32, -0.3, k)], lean: 0.04, head: -0.02, smile: t < 7 ? 0.9 : t < 9.9 ? lerp(0.9, 0.5, prog(t, 7, 9.4)) : 0.9 };
+      }
+      const GJ = GRANDPA.draw(c, { ...gp, armB: [0.25, 0.9], x: 1168, y: ground(1168), facing: -1 }, t);
+      drawKite(c, { x: GJ.armB.hand[0] + 4, y: GJ.armB.hand[1] - 2, size: 17, rot: -1.2, sx: 0.55, lineW: 0.6, patch: 1 });
+      if (after) return;
+      // 小燕下山：走 → 回头挥手 → 再走、上车
+      const pf = (tt) => {
+        let s, facing = -1, pose;
+        if (tt < 4.8) {
+          s = lerp(0.05, 0.42, prog(tt, 1.0, 4.8));
+          pose = walk((s - 0.05) * 900 / 92, { stride: 0.38 });
+        } else if (tt < 6.8) {
+          s = 0.42; facing = 1;
+          const w = envelope(tt, 5.15, 6.35, 0.35, 0.4);
+          const k = Ease.inOutSine(w);
+          pose = { ...POSE.stand, armF: [lerp(0.1, -2.5 + Math.sin(tt * 9) * 0.25, k), lerp(0.3, -0.3, k)], expr: 'happy', head: -0.1 };
+        } else {
+          s = lerp(0.42, 0.93, prog(tt, 6.9, 9.3));
+          pose = walk((s - 0.05) * 900 / 92, { stride: 0.38 });
+        }
+        const pos = pathAt(s);
+        return { ...pose, x: pos[0], y: pos[1], facing };
+      };
+      const P = withVel(pf, t);
+      const vis = 1 - prog(t, 9.0, 9.4);
+      if (vis > 0) scaled(c, P.x, P.y, depthScale(P.y), () => TEEN.draw(c, { ...P, alpha: vis }, t));
+    },
+  });
+}
 export const S13 = {
   id: 'S13',
   dur: 14,
   amb: 'morning',
   cues: [{ t: 1.0, kind: 'sfx', name: 'steps' }, { t: 5.0, kind: 'hit', name: 'wave' }, { t: 9.0, kind: 'sfx', name: 'bus_door' }, { t: 9.8, kind: 'sfx', name: 'bus' }],
-  render(ctx, t, R) {
-    const u = prog(t, 0, 14, 'inOutSine');
-    const cam = new Camera(lerp(950, 990, u), lerp(588, 580, u), lerp(1.0, 1.04, u));
-    drawMaster(ctx, t + 150, R, {
-      cam, season: 'summer', wind: 0.35, smoke: 0.8, sky: { horizon: [250, 236, 216], horAlpha: 0.45 },
-      actors: (c) => {
-        stool(c);
-        // 汽车
-        const bx = t < 9.8 ? 640 : lerp(640, -260, prog(t, 9.8, 13.6, 'inQuad'));
-        const by = ROAD_Y(bx) + 10;
-        if (t > 9.9) dust(c, bx + 50, by - 4, t, 1 - prog(t, 12.5, 14));
-        drawBus(c, bx, by, 1.6, 1, t);
-        // 爷爷：夹着风筝站在坡顶
-        const waving = t > 5.0 && t < 6.8;
-        const gp = waving ? { ...POSE.wave, armF: [-2.5 + Math.sin(t * 9) * 0.25, -0.3], mouth: 'smile' } : t > 6.8 ? { ...POSE.standOld, lean: lerp(0.05, 0.25, prog(t, 7, 12)), head: 0.05, mouth: 'line' } : { ...POSE.stand, mouth: 'smile' };
-        const GJ = GRANDPA.draw(c, { ...gp, armB: [0.25, 0.9], x: 1168, y: ground(1168), facing: -1 }, t);
-        drawKite(c, { x: GJ.armB.hand[0] + 4, y: GJ.armB.hand[1] - 2, size: 17, rot: -1.2, sx: 0.55, lineW: 0.6, patch: 1 });
-        // 小燕下山
-        let s, facing = -1, pose;
-        if (t < 4.8) {
-          s = lerp(0.05, 0.42, prog(t, 1.0, 4.8));
-          pose = walk((s - 0.05) * 900 / 92, { stride: 0.38 });
-        } else if (t < 6.8) {
-          s = 0.42; facing = 1;
-          pose = { ...POSE.wave, armF: [-2.5 + Math.sin(t * 9) * 0.25, -0.3], mouth: 'smile', head: -0.1 };
-        } else {
-          s = lerp(0.42, 0.93, prog(t, 6.9, 9.3));
-          pose = walk((s - 0.05) * 900 / 92, { stride: 0.38 });
-        }
-        const pos = pathAt(s);
-        const vis = 1 - prog(t, 9.0, 9.4);
-        if (vis > 0) scaled(c, pos[0], pos[1], depthScale(pos[1]), () => TEEN.draw(c, { ...pose, x: pos[0], y: pos[1], facing, alpha: vis }, t));
-      },
-    });
-  },
+  render(ctx, t, R) { renderS13(ctx, t, R, false); },
+};
+export const S13C = {
+  id: 'S13C',
+  dur: 3.4,
+  amb: 'morning',
+  cues: [{ t: 0.2, kind: 'sfx', name: 'bus_far' }],
+  render(ctx, t, R) { renderS13(ctx, t + 10.6, R, true); },
 };
 
 // ---------------- S14 三个春天：爷爷独自放风筝 ----------------
@@ -233,7 +257,7 @@ function lonelySpring(id, v) {
     render(ctx, t, R) {
       const cam = new Camera(1000 + v * 8, 532, 1.1 + v * 0.03);
       drawMaster(ctx, t + 170 + v * 17, R, {
-        cam, season: 'spring', petals: 14, wind: 0.5, smoke: 0.5 - v * 0.2,
+        cam, season: 'spring', petals: 14, wind: 0.5, smoke: 0.5 - v * 0.2, beams: 0.5,
         actors: (c) => {
           stool(c);
           const kp = [[560, 250], [640, 330], [730, 430]][v];
@@ -279,12 +303,14 @@ export const S15 = {
     const gust = prog(t, 7.2, 8.3) * (1 - prog(t, 9.6, 12));
     drawMaster(ctx, t + 200, R, {
       cam, season: 'winter', wind: 0.6 + gust * 1.8, snowfall: Math.round(170 + gust * 120), snowWind: 20 + gust * 70,
-      sky: WINTER_SKY,
+      sky: WINTER_SKY, frame: { corner: 'tl', kind: 'snow', len: 500, dip: 0.3, blur: 12, alpha: 0.9, seed: 5 },
       actors: (c) => {
         stool(c, 0.3);
-        const doze = prog(t, 2.6, 6.0, 'inOutSine');
+        // 打盹：头慢慢垂下 → 猛地一点醒 → 又慢慢睡过去
+        const doze = track([[0, 0], [2.4, 0], [3.35, 0.55, 'inOutSine'], [3.5, 0.16, 'outQuad'], [3.95, 0.2], [6.0, 1.0, 'inOutSine']], t);
         const pose = mixv({ ...POSE.sitOld, armF: [0.95, 0.5], armB: [0.8, 0.6], head: -0.4 }, POSE.doze, doze);
-        const J = GRANDPA.draw(c, { ...pose, x: STOOL_X + 3, y: stoolY(), sit: SEAT, facing: -1, eyesClosed: doze > 0.55, mouth: 'line' }, t);
+        const woke = t > 3.45 && t < 3.95;
+        const J = GRANDPA.draw(c, { ...pose, x: STOOL_X + 3, y: stoolY(), sit: SEAT, facing: -1, eyesClosed: doze > 0.42 && !woke, smile: lerp(0.3, 0.1, doze), snowCap: 0.3 + prog(t, 0, 14) * 0.6 }, t);
         const reel = [J.armF.hand[0], J.armF.hand[1] + doze * 4];
         drawReel(c, reel[0], reel[1], 6.5, 0.5 + doze * 0.6);
         const wb = kiteWobble(t + 40, 8, 1.4 + gust * 2.5);
@@ -315,32 +341,39 @@ export const S16 = {
   id: 'S16',
   dur: 16,
   amb: 'winter',
-  post: WINTER_POST,
+  post: { ...WINTER_POST, dof: 0.3, dofRadius: 3 },
   cues: [{ t: 0.8, kind: 'sfx', name: 'snow_steps' }, { t: 8.6, kind: 'hit', name: 'pickup' }, { t: 12.0, kind: 'hit', name: 'tilt' }],
   render(ctx, t, R) {
     const u = prog(t, 11.5, 16, 'inOutSine');
     const cam = new Camera(lerp(1130, 1066, u), lerp(612, 572, u), lerp(2.15, 3.2, u));
     drawMaster(ctx, t + 230, R, {
       cam, season: 'winter', wind: 0.4, snowfall: 110, snowWind: 10, sky: WINTER_SKY,
+      frame: { corner: 'tr', kind: 'snow', len: 520, dip: 0.3, blur: 12, alpha: 0.9, seed: 8 },
       actors: (c) => {
         stool(c, 1);
+        // 剪辑：S16（0–8.3）→ 特写 S16B 拾起线拐子 → S16C（9.2 起）
         const holding = t > 9.0;
-        // 女人走上山
-        let x, y, pose, facing = 1;
-        if (t < 6.8) {
-          const s = lerp(0.38, 0.02, prog(t, 0.3, 6.8));
-          [x, y] = pathAt(s);
-          pose = { ...walk((0.38 - s) * 900 / 92, { stride: 0.32 }), head: 0.15, mouth: 'line', armF: [0.55, 0.9] };
-        } else {
-          x = lerp(1186, 1176, prog(t, 6.8, 7.4));
-          y = ground(x);
-          if (t < 8.0) pose = { ...POSE.stand, head: 0.25, mouth: 'line', armF: [0.55, 0.9] };
-          else if (t < 9.2) pose = { ...mixv(POSE.stand, POSE.crouch, Math.sin(prog(t, 8.0, 9.2) * Math.PI)), head: 0.4, mouth: 'line', eyesDown: true };
-          else pose = { ...POSE.hug, head: 0.35, mouth: 'line', eyesDown: true };
-        }
-        const J = WOMAN_MOURN.draw(c, { ...pose, x, y, facing }, t);
+        const pf = (tt) => {
+          let x, y, pose;
+          if (tt < 6.4) {
+            // 慢慢走上山，低着头
+            const sp = lerp(0.38, 0.02, prog(tt, 0.3, 6.4));
+            [x, y] = pathAt(sp);
+            pose = { ...walk((0.38 - sp) * 900 / 84, { stride: 0.28, lean: 0.1 }), head: 0.25, expr: 'neutral', smile: -0.05, armF: [0.55, 0.9] };
+          } else {
+            x = lerp(1186, 1180, prog(tt, 6.4, 7.0));
+            y = ground(x);
+            const CROUCH = { ...POSE.crouch, armF: [1.05, 0.25], armB: [0.7, 0.5], head: 0.45, eyesDown: true };
+            if (tt < 9.2) pose = track([[6.4, { ...POSE.stand, head: 0.3, armF: [0.55, 0.9] }], [7.0, { ...POSE.stand, head: 0.32, armF: [0.55, 0.9] }], [7.85, { ...CROUCH, armF: [1.2, 0.2] }, 'inOutSine'], [8.3, CROUCH]], tt);
+            else pose = track([[9.2, { ...POSE.crouch, ...POSE.hug, legF: POSE.crouch.legF, legB: POSE.crouch.legB, head: 0.4 }], [10.3, { ...POSE.hug, head: 0.38 }, 'inOutSine'], [11.6, { ...POSE.hug, head: 0.36 }], [13.2, { ...POSE.hug, head: -0.4, eyesUp: true }, 'inOutSine']], tt);
+            pose = { ...pose, expr: 'neutral', smile: -0.08, tilt: -0.2 };
+          }
+          return { ...pose, x, y, facing: 1 };
+        };
+        const P = withVel(pf, t);
+        const J = WOMAN_MOURN.draw(c, P, t);
         // 白菊：先在手里，放下后留在凳上
-        if (t < 8.4) chrysanthemum(c, J.armF.hand[0] + 2, J.armF.hand[1] - 6, 4.2);
+        if (t < 7.75) chrysanthemum(c, J.armF.hand[0] + 2, J.armF.hand[1] - 6, 4.2);
         else chrysanthemum(c, STOOL_X - 6, stoolY() - SEAT - 3, 4.2);
         // 线拐子
         if (!holding) {

@@ -338,7 +338,11 @@ export class Post {
     // 2) 模糊：洇墨用的小模糊；景深用的大模糊
     this.blur(this.fMix.ts[0], this.fH, this.fV, P.blurRadius);
     const useDof = P.dof > 0.001;
-    if (useDof) this.blur(this.fMix.ts[0], this.fDH, this.fDV, P.dofRadius);
+    // 景深：两遍可分离模糊叠出更平滑的大半径（单遍 9 抽头在大半径下会出重影）
+    if (useDof) {
+      this.blur(this.fMix.ts[0], this.fDH, this.fDV, P.dofRadius * 0.6);
+      this.blur(this.fDV.t, this.fDH, this.fDV, P.dofRadius * 0.8);
+    }
     // 3) 合成
     pr = this.progFinal;
     gl.useProgram(pr.p);

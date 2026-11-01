@@ -6,9 +6,10 @@
 //         眉毛表情、眼睛高光、眨眼、耳朵、发丝、爷爷的长须与皱纹、脚下接触影
 //   表演：待机呼吸与重心轻移、按速度滞后摆动的头绳/马尾/衣摆、关键姿势插值的走跑循环
 import { stroke, blob, rgba, inkRGB, softDot, whiteOf, line, bgOf } from '../ink/brush.js';
-import { lerp, clamp, TAU, mixv } from '../core/math.js';
+import { lerp, clamp, TAU, mixv, track } from '../core/math.js';
 import { noise1, hash } from '../core/noise.js';
 import { C } from '../world/palette.js';
+import { drawHand as drawHandCU } from './closeup.js';
 
 const colOf = (c) => (Array.isArray(c) ? c : inkRGB(c));
 const darker = (c, k) => c.map((v) => v * k);
@@ -125,6 +126,7 @@ export class Figure {
     this.rv = this.L.headR * this.vs; // 头半径在屏幕上的虚拟像素
     this.v = p.v || [0, 0];
     this.t = t;
+    this.rim = p.rim || null;
     ctx.save();
     if (!p.noShadow) this.drawShadow(J, p);
     if (this.s.backpack) this.drawBackpack(J);
@@ -154,6 +156,22 @@ export class Figure {
     ctx.globalAlpha = this.a * alpha;
     ctx.fillStyle = rgba(col, 1);
     ctx.fill(path);
+    // 轮廓光：受光一侧沿边缘的一条亮带 = 本形状 − 背着光平移后的本形状
+    const rim = this.rim;
+    if (rim) {
+      const m = ctx.getTransform();
+      const inv = m.inverse();
+      const px = (rim.w ?? 1.6) * (ctx.base || 1);
+      const dx = -rim.dir[0] * px, dy = -rim.dir[1] * px;
+      const lx = inv.a * dx + inv.c * dy, ly = inv.b * dx + inv.d * dy;
+      const P2 = new Path2D();
+      P2.rect(-1e5, -1e5, 2e5, 2e5);
+      P2.addPath(path, new DOMMatrix([1, 0, 0, 1, lx, ly]));
+      ctx.clip(path);
+      ctx.globalAlpha = this.a * alpha * (rim.a ?? 0.6);
+      ctx.fillStyle = rgba(rim.col || [255, 214, 160], 1);
+      ctx.fill(P2, 'evenodd');
+    }
     ctx.restore();
     if (this.W8) {
       const W = this.W8;
@@ -294,7 +312,12 @@ export class Figure {
     const k = s.child ? 1.2 : 1;
     const base = colOf(s.sleeve ?? s.jacket ?? 0.7);
     const col = back ? darker(base, 0.88) : base;
-    const cap = this.capsule([g.sh, g.elbow, g.wrist], [H * 0.1 * k, H * 0.08 * k, H * 0.094 * k]);
+    // 袖子的圆头收在腕部以内，不在手后面露出半个圆
+    const fw = [g.wrist[0] - g.elbow[0], g.wrist[1] - g.elbow[1]];
+    const fl = Math.hypot(fw[0], fw[1]) || 1;
+    const endW = H * 0.094 * k;
+    const wIn = [g.wrist[0] - (fw[0] / fl) * endW * 0.45, g.wrist[1] - (fw[1] / fl) * endW * 0.45];
+    const cap = this.capsule([g.sh, g.elbow, wIn], [H * 0.1 * k, H * 0.08 * k, endW]);
     this.fillPath(cap.path, col);
     const bs = this.backSide(cap, f);
     const mid = Math.floor(cap.L.length / 2);
@@ -328,6 +351,15 @@ export class Figure {
     this.drawHand(g, ux, uy, f, grip, k);
   }
   drawHand(g, ux, uy, f, grip, k) {
+    // 近景：换成有手指的精细手（拇指朝前）
+    if (this.rv > 34) {
+      const s = this.L.headR * (this.s.child ? 0.5 : 0.52);
+      const ang = Math.atan2(uy, ux);
+      const kind = this.s.style === 'grandpa' ? 'old' : this.s.child ? 'child' : 'adult';
+      const tx = Math.sin(ang);
+      drawHandCU(this.ctx, { x: g.wrist[0], y: g.wrist[1], ang, s, kind, view: 'back', curl: grip ? [0.85, 0.9, 0.92, 0.95] : [0.25, 0.32, 0.4, 0.48], thumb: grip ? 0.55 : 0.25, mirror: tx * f < 0, alpha: this.a, noWrist: true, seed: 7 + (this.s.child ? 3 : 0) });
+      return;
+    }
     const r = this.L.headR * (this.s.child ? 0.36 : 0.31);
     const ctx = this.ctx;
     // 手的局部坐标：x 沿小臂，y 指向拇指一侧（朝上/朝前）
@@ -484,6 +516,22 @@ export class Figure {
       this.outline(cap.L, this.lw(0.007), 0.6, 69);
       this.outline(cap.R, this.lw(0.007), 0.6, 70);
     }
+    // 肩上积雪
+    if (p.snowCap > 0 && this.W8) {
+      const W8 = this.W8;
+      const k = clamp(p.snowCap);
+      W8.save();
+      W8.setTransform(ctx.getTransform());
+      W8.globalAlpha = this.a * 0.9;
+      W8.fillStyle = '#fff';
+      const a0 = P(J.chest, -wc * 0.55, -H * 0.0), a1 = P(J.chest, wc * 0.3, -H * 0.022);
+      W8.beginPath();
+      W8.moveTo(a0[0], a0[1]);
+      W8.quadraticCurveTo((a0[0] + a1[0]) / 2, (a0[1] + a1[1]) / 2 - H * 0.03 * k, a1[0], a1[1]);
+      W8.quadraticCurveTo((a0[0] + a1[0]) / 2, (a0[1] + a1[1]) / 2 + H * 0.006, a0[0], a0[1]);
+      W8.fill();
+      W8.restore();
+    }
   }
 
   drawBackpack(J) {
@@ -508,6 +556,10 @@ export class Figure {
     const tilt = (J.lean * 0.4 + J.hd) * f;
     const E = { ...EXPR[p.expr || 'happy'] };
     if (p.mouth) E.mouth = p.mouth;
+    // 连续表情：smile -1..1 覆盖嘴形（笑容渐隐用），brow / tilt 覆盖眉毛
+    if (typeof p.smile === 'number') E.mouth = 'curve';
+    if (typeof p.brow === 'number') E.brow = p.brow;
+    if (typeof p.tilt === 'number') E.tilt = p.tilt;
     const closed = p.eyesClosed ?? E.eyesClosed ?? false;
     const blink = !closed && this.blinking(t);
     const det = this.rv; // 头半径（屏幕虚拟像素），决定细节多少
@@ -653,6 +705,24 @@ export class Figure {
       const kn = new Path2D();
       kn.arc(-f * r * 0.02, -r * 1.1, r * 0.14, 0, TAU);
       this.fillPath(kn, [30, 30, 34]);
+      // 帽顶积雪（坐久了的雪）
+      if (p.snowCap > 0 && this.W8) {
+        const W8 = this.W8;
+        const k = clamp(p.snowCap);
+        W8.save();
+        W8.setTransform(ctx.getTransform());
+        W8.globalAlpha = this.a * 0.95;
+        W8.fillStyle = '#fff';
+        W8.beginPath();
+        W8.ellipse(-f * r * 0.02, -r * 0.3, r * 1.0, r * 0.76, 0, Math.PI * 1.12, Math.PI * 1.88);
+        W8.ellipse(-f * r * 0.02, -r * 0.3 + r * 0.05, r * 0.94, r * (0.76 - 0.2 * k), 0, Math.PI * 1.88, Math.PI * 1.12, true);
+        W8.closePath();
+        W8.fill();
+        W8.beginPath();
+        W8.ellipse(-f * r * 0.02, -r * 1.12, r * 0.17 * (0.6 + k * 0.5), r * 0.1 * (0.6 + k * 0.5), 0, Math.PI, TAU);
+        W8.fill();
+        W8.restore();
+      }
     } else {
       // 以下按朝右书写，朝左时整体镜像
       ctx.save();
@@ -795,6 +865,15 @@ export class Figure {
       ctx.fill();
     } else if (mo === 'smile') {
       line(ctx, [[mx - r * 0.15, my - r * 0.03], [mx, my + r * 0.07], [mx + r * 0.12, my - r * 0.04]], lw, inkRGB(0.88), 0.95);
+    } else if (mo === 'curve') {
+      const sm = clamp(p.smile, -1, 1);
+      ctx.strokeStyle = rgba(inkRGB(0.88), 0.95);
+      ctx.lineWidth = lw;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(mx - r * 0.15, my - r * 0.03 * sm);
+      ctx.quadraticCurveTo(mx - r * 0.01, my + r * 0.13 * sm, mx + r * 0.12, my - r * 0.04 * sm);
+      ctx.stroke();
     } else if (mo === 'sad') {
       line(ctx, [[mx - r * 0.13, my + r * 0.06], [mx, my - r * 0.01], [mx + r * 0.11, my + r * 0.06]], lw, inkRGB(0.88), 0.95);
     } else {
@@ -957,5 +1036,16 @@ export function blend(a, b, t) {
 // 由姿势函数求速度（世界单位/秒），供头绳、衣摆滞后摆动
 export function withVel(pf, t, dt = 0.08) {
   const a = pf(t), b = pf(t - dt);
-  return { ...a, v: [(a.x - b.x) / dt, (a.y - b.y) / dt] };
+  return { ...a, v: [(a.x - b.x) / dt, ((a.y - (a.lift || 0)) - (b.y - (b.lift || 0))) / dt] };
+}
+
+// 原地起跳一次（ph 0..1）：预备下蹲 → 蹬地 → 腾空 → 落地缓冲 → 站直
+export function hop(ph, o = {}) {
+  const stand = o.stand || POSE.stand;
+  const crouch = { ...stand, legF: [0.62, 1.2], legB: [0.5, 1.1], lean: 0.28, armF: [-0.7, 0.5], armB: [-0.8, 0.5], head: 0.08, footF: 0.1, footB: 0.1 };
+  const air = { ...POSE.jump, ...(o.air || {}) };
+  const p = clamp(ph);
+  const pose = track([[0, stand], [0.2, crouch, 'outQuad'], [0.34, air, 'outQuad'], [0.66, air, 'inOutSine'], [0.8, crouch, 'outQuad'], [1.0, stand, 'inOutSine']], p);
+  const lift = Math.sin(clamp((p - 0.3) / 0.44) * Math.PI) * (o.height ?? 15);
+  return { ...pose, lift };
 }

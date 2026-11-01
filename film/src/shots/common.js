@@ -7,6 +7,7 @@ import { noise1, hash } from '../core/noise.js';
 import { C } from '../world/palette.js';
 import { drawStool } from '../actors/props.js';
 import { TREE } from '../world/master.js';
+import { drawHand as drawHandCU } from '../actors/closeup.js';
 
 // 挂在树上的风筝：取树冠左下一根枝条上的点（需在当帧画完树之后调用）
 let CAUGHT = null;
@@ -159,60 +160,22 @@ export function drawBrushTool(ctx, tip, ang, s, a = 1) {
 }
 
 // 从画面外伸进来的手臂（袖子 + 手）：from 为画面外的肘部方向，hand 为手心
-export function drawArmIn(ctx, from, hand, w, sleeve, a = 1) {
+// v2：改用近景手（closeup.drawHand），拇指朝上；o.curl 手指弯曲、o.kind 'old'|'adult'|'child'
+export function drawArmIn(ctx, from, hand, w, sleeve, a = 1, o = {}) {
   const dx = hand[0] - from[0], dy = hand[1] - from[1];
   const L = Math.hypot(dx, dy) || 1;
-  const ux = dx / L, uy = dy / L, nx = -uy, ny = ux;
-  const wrist = [hand[0] - ux * w * 0.55, hand[1] - uy * w * 0.55];
-  const cuff = [wrist[0] - ux * w * 0.25, wrist[1] - uy * w * 0.25];
-  const ang = Math.atan2(dy, dx);
-  ctx.save();
-  ctx.globalAlpha = a;
-  ctx.globalCompositeOperation = 'source-over';
-  // 手（先画，袖口盖住手腕）
-  ctx.fillStyle = rgba(C.skin, 1);
-  ctx.beginPath();
-  ctx.ellipse(hand[0], hand[1], w * 0.46, w * 0.36, ang, 0, TAU);
-  ctx.fill();
-  ctx.beginPath();
-  ctx.ellipse(hand[0] - ux * w * 0.1 + nx * w * 0.36, hand[1] - uy * w * 0.1 + ny * w * 0.36, w * 0.24, w * 0.12, ang + 0.5, 0, TAU);
-  ctx.fill();
-  ctx.globalCompositeOperation = 'multiply';
-  ctx.lineWidth = w * 0.035;
-  ctx.strokeStyle = rgba(inkRGB(0.75), 0.9);
-  ctx.beginPath();
-  ctx.ellipse(hand[0], hand[1], w * 0.46, w * 0.36, ang, 0, TAU);
-  ctx.stroke();
-  for (let k = 0; k < 3; k++) {
-    const q = [hand[0] + ux * w * (0.05 + k * 0.12) - nx * w * 0.12, hand[1] + uy * w * (0.05 + k * 0.12) - ny * w * 0.12];
-    ctx.beginPath();
-    ctx.arc(q[0], q[1], w * 0.1, ang - 1.2, ang + 0.6);
-    ctx.stroke();
-  }
-  // 袖子
-  ctx.globalCompositeOperation = 'source-over';
-  ctx.fillStyle = rgba(sleeve, 1);
-  ctx.beginPath();
-  ctx.moveTo(from[0] + nx * w * 0.72, from[1] + ny * w * 0.72);
-  ctx.lineTo(cuff[0] + nx * w * 0.62, cuff[1] + ny * w * 0.62);
-  ctx.lineTo(cuff[0] - nx * w * 0.62, cuff[1] - ny * w * 0.62);
-  ctx.lineTo(from[0] - nx * w * 0.72, from[1] - ny * w * 0.72);
-  ctx.closePath();
-  ctx.fill();
-  // 袖口翻边（浅色）
-  ctx.fillStyle = rgba(sleeve.map((v) => Math.min(255, v + 46)), 1);
-  ctx.beginPath();
-  ctx.moveTo(cuff[0] + nx * w * 0.62, cuff[1] + ny * w * 0.62);
-  ctx.lineTo(cuff[0] + nx * w * 0.62 - ux * w * 0.22, cuff[1] + ny * w * 0.62 - uy * w * 0.22);
-  ctx.lineTo(cuff[0] - nx * w * 0.62 - ux * w * 0.22, cuff[1] - ny * w * 0.62 - uy * w * 0.22);
-  ctx.lineTo(cuff[0] - nx * w * 0.62, cuff[1] - ny * w * 0.62);
-  ctx.closePath();
-  ctx.fill();
-  ctx.globalCompositeOperation = 'multiply';
-  stroke(ctx, [[from[0] + nx * w * 0.72, from[1] + ny * w * 0.72], [cuff[0] + nx * w * 0.62, cuff[1] + ny * w * 0.62]], { w: w * 0.06, tone: 0.92, dry: 0.25, seed: 5 });
-  stroke(ctx, [[from[0] - nx * w * 0.72, from[1] - ny * w * 0.72], [cuff[0] - nx * w * 0.62, cuff[1] - ny * w * 0.62]], { w: w * 0.06, tone: 0.92, dry: 0.25, seed: 6 });
-  stroke(ctx, [[from[0] + nx * w * 0.2 - ux * 0, from[1] + ny * w * 0.2], [cuff[0] + nx * w * 0.1 - ux * w * 0.6, cuff[1] + ny * w * 0.1 - uy * w * 0.6]], { w: w * 0.03, tone: 0.95, alpha: 0.5, dry: 0.4, seed: 7 });
-  ctx.restore();
+  const ux = dx / L, uy = dy / L;
+  const ang = Math.atan2(uy, ux);
+  const s = w * 1.05;
+  const wrist = [hand[0] - ux * s * 0.5, hand[1] - uy * s * 0.5];
+  const kind = o.kind || (sleeve[0] < 120 ? 'old' : 'adult');
+  // 拇指（局部 -y）朝画面上方
+  const mirror = -Math.cos(ang) > 0;
+  drawHandCU(ctx, {
+    x: wrist[0], y: wrist[1], ang, s, kind, view: 'back',
+    curl: o.curl ?? 0.55, thumb: o.thumb ?? 0.4, thumbA: o.thumbA ?? -0.6, mirror,
+    sleeve, cuff: sleeve.map((v) => Math.min(255, v + 40)), sleeveLen: L + 2400, sleeveW: w * 1.25, alpha: a, seed: o.seed ?? 3,
+  });
 }
 
 // 山脚的老式客车
