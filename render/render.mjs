@@ -13,7 +13,8 @@ const preview = !!args.preview;
 const W = parseInt(args.w || (preview ? '960' : '1920'), 10);
 const H = Math.round((W * 9) / 16);
 const WORKERS = parseInt(args.workers || '4', 10);
-const CRF = String(args.crf || (preview ? '23' : '17'));
+const CRF = String(args.crf || (preview ? '23' : '16'));
+const PRESET = String(args.preset || (preview ? 'veryfast' : 'medium'));
 const step = preview ? 2 : 1; // 样片隔帧渲染 → 12fps
 const out = path.resolve(ROOT, args.out || (preview ? 'build/preview.mp4' : 'build/video.mp4'));
 const segDir = path.join(path.dirname(out), path.basename(out, '.mp4') + '_segs');
@@ -56,7 +57,7 @@ async function worker(k) {
     '-y', '-loglevel', 'error',
     '-f', 'rawvideo', '-pix_fmt', 'rgba', '-s', `${W}x${H}`, '-framerate', String(outFps), '-i', '-',
     '-vf', 'vflip',
-    '-c:v', 'libx264', '-preset', preview ? 'veryfast' : 'slow', '-crf', CRF, '-tune', 'animation',
+    '-c:v', 'libx264', '-preset', PRESET, '-crf', CRF, '-tune', 'animation',
     '-pix_fmt', 'yuv420p', '-g', String(outFps * 2), '-movflags', '+faststart', seg,
   ], { stdio: ['pipe', 'inherit', 'inherit'] });
   ff.count = 0;

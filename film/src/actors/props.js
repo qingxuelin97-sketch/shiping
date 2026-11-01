@@ -86,7 +86,12 @@ export function drawKite(ctx, o) {
   ctx.fillStyle = rgba([lerp(250, 238, aged), lerp(248, 228, aged), lerp(244, 204, aged)], 1);
   if (!o.overpaint) { ctx.fill(body); ctx.fill(headP); }
   if (W8 && !o.overpaint) {
+    // 先擦掉身后的白粉（比如背后的梨花），再上自己的白
     W8.save();
+    W8.globalCompositeOperation = 'destination-out';
+    W8.globalAlpha = a * paper;
+    W8.fill(body);
+    W8.fill(headP);
     W8.globalCompositeOperation = 'source-over';
     W8.globalAlpha = a * paper * (0.6 - aged * 0.45);
     W8.fillStyle = '#fff';

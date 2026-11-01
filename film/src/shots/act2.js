@@ -188,7 +188,7 @@ export const S13 = {
   cues: [{ t: 1.0, kind: 'sfx', name: 'steps' }, { t: 5.0, kind: 'hit', name: 'wave' }, { t: 9.0, kind: 'sfx', name: 'bus_door' }, { t: 9.8, kind: 'sfx', name: 'bus' }],
   render(ctx, t, R) {
     const u = prog(t, 0, 14, 'inOutSine');
-    const cam = new Camera(lerp(950, 1000, u), lerp(545, 535, u), lerp(1.0, 1.06, u));
+    const cam = new Camera(lerp(950, 990, u), lerp(588, 580, u), lerp(1.0, 1.04, u));
     drawMaster(ctx, t + 150, R, {
       cam, season: 'summer', wind: 0.35, smoke: 0.8, sky: { horizon: [250, 236, 216], horAlpha: 0.45 },
       actors: (c) => {
