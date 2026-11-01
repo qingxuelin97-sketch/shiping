@@ -1,0 +1,10 @@
+# 渲染中间产物
+build/
+node_modules/
+__pycache__/
+*.pyc
+
+# 由 tools/fetch_assets.py 下载的第三方素材（来源与许可见 assets/manifest.json 和 docs/CREDITS.md）
+assets/fonts/
+assets/soundfont/
+assets/sfx/

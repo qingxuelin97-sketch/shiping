@@ -1,0 +1,212 @@
+[
+  {
+    "path": "fonts/MaShanZheng-Regular.ttf",
+    "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/mashanzheng/MaShanZheng-Regular.ttf",
+    "page": "https://fonts.google.com/specimen/Ma+Shan+Zheng",
+    "author": "Ma Shan Zheng",
+    "license": "OFL-1.1",
+    "use": "片名、印章",
+    "bytes": 5857936,
+    "sha256": "6d2546bb189c732a8ca29af9e22457b152387d158aa459e4ac2ce1e51788b7fb"
+  },
+  {
+    "path": "fonts/MaShanZheng-OFL.txt",
+    "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/mashanzheng/OFL.txt",
+    "page": "",
+    "author": "",
+    "license": "OFL-1.1",
+    "use": "许可文本",
+    "bytes": 4397,
+    "sha256": "d7bdb1cee215b689e23c2f95672a6084c790542170648267a55114103d756a08"
+  },
+  {
+    "path": "fonts/ZhiMangXing-Regular.ttf",
+    "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/zhimangxing/ZhiMangXing-Regular.ttf",
+    "page": "https://fonts.google.com/specimen/Zhi+Mang+Xing",
+    "author": "Wei Zhimang",
+    "license": "OFL-1.1",
+    "use": "题诗、题献（行书）",
+    "bytes": 4063532,
+    "sha256": "644e0cae9b40f0b10ab729a01bd32032e3973bac22be3dccae01bf6ae7fde969"
+  },
+  {
+    "path": "fonts/ZhiMangXing-OFL.txt",
+    "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/zhimangxing/OFL.txt",
+    "page": "",
+    "author": "",
+    "license": "OFL-1.1",
+    "use": "许可文本",
+    "bytes": 4397,
+    "sha256": "10947328199e369a3e6b4a67e8e5507ed99d5bbb264a1f156415aa9b665e4d15"
+  },
+  {
+    "path": "fonts/ZCOOLXiaoWei-Regular.ttf",
+    "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/zcoolxiaowei/ZCOOLXiaoWei-Regular.ttf",
+    "page": "https://fonts.google.com/specimen/ZCOOL+XiaoWei",
+    "author": "ZCOOL",
+    "license": "OFL-1.1",
+    "use": "片尾字幕（中文）",
+    "bytes": 6313808,
+    "sha256": "a42b620140f493db42f741351dfbf343c0936d58588ee8004b8b2a218d997ff1"
+  },
+  {
+    "path": "fonts/ZCOOLXiaoWei-OFL.txt",
+    "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/zcoolxiaowei/OFL.txt",
+    "page": "",
+    "author": "",
+    "license": "OFL-1.1",
+    "use": "许可文本",
+    "bytes": 4400,
+    "sha256": "a094514ca57cf8f9c5e8d8d1adab5d8cd3a377297ff016f9df2c05b3ecd77f0a"
+  },
+  {
+    "path": "fonts/CormorantGaramond.ttf",
+    "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/cormorantgaramond/CormorantGaramond%5Bwght%5D.ttf",
+    "page": "https://fonts.google.com/specimen/Cormorant+Garamond",
+    "author": "Christian Thalmann",
+    "license": "OFL-1.1",
+    "use": "英文字幕",
+    "bytes": 1195560,
+    "sha256": "b20b7d9626dd956b2c5e558692ad328b1f19e3275e2782db4fa07670d83f35e0"
+  },
+  {
+    "path": "fonts/CormorantGaramond-Italic.ttf",
+    "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/cormorantgaramond/CormorantGaramond-Italic%5Bwght%5D.ttf",
+    "page": "https://fonts.google.com/specimen/Cormorant+Garamond",
+    "author": "Christian Thalmann",
+    "license": "OFL-1.1",
+    "use": "英文字幕（斜体）",
+    "bytes": 715644,
+    "sha256": "0f48ea6abb2084537854f7174c470991a463b13036309e3b50a81511611c530d"
+  },
+  {
+    "path": "fonts/CormorantGaramond-OFL.txt",
+    "url": "https://raw.githubusercontent.com/google/fonts/main/ofl/cormorantgaramond/OFL.txt",
+    "page": "",
+    "author": "",
+    "license": "OFL-1.1",
+    "use": "许可文本",
+    "bytes": 4387,
+    "sha256": "60700d351cac4650c51f3f9db318d2a420f8b45052dba2715eb5fec41f0f6956"
+  },
+  {
+    "path": "soundfont/GeneralUser-GS.sf2",
+    "url": "https://raw.githubusercontent.com/mrbumpy409/GeneralUser-GS/main/GeneralUser-GS.sf2",
+    "page": "https://www.schristiancollins.com/generaluser",
+    "author": "S. Christian Collins",
+    "license": "GeneralUser GS License v2.0（可自由用于音乐创作，含商用）",
+    "use": "配乐音色",
+    "bytes": 32319396,
+    "sha256": "9575028c7a1f589f5770fccc8cff2734566af40cd26ed836944e9a5152688cfe"
+  },
+  {
+    "path": "soundfont/GeneralUser-GS-LICENSE.txt",
+    "url": "https://raw.githubusercontent.com/mrbumpy409/GeneralUser-GS/main/documentation/LICENSE.txt",
+    "page": "",
+    "author": "",
+    "license": "",
+    "use": "许可文本",
+    "bytes": 2317,
+    "sha256": "7b32efefdf95ce38a043799f0659853ddc00fbaa14d8c50f0aca16b9b8b405be"
+  },
+  {
+    "path": "sfx/wind_background_noise_2.wav",
+    "url": "https://opengameart.org/sites/default/files/wind%20background%20noise%202.wav",
+    "page": "https://opengameart.org/content/mild-wind-background-noise",
+    "author": "bashar3a",
+    "license": "CC0",
+    "use": "四季风声底",
+    "bytes": 15708766,
+    "sha256": "9f1fd5c8b37949e6889a7f6acbd822f66e0ab4e918d72bda58d8d8c2c7e85a80"
+  },
+  {
+    "path": "sfx/short_wind_sound.wav",
+    "url": "https://opengameart.org/sites/default/files/short%20wind%20sound.wav",
+    "page": "https://opengameart.org/content/short-wind-sound",
+    "author": "remaxim",
+    "license": "CC0",
+    "use": "阵风",
+    "bytes": 747196,
+    "sha256": "4435f5ad1baf171f21f876f778d0a8a7447becea0c4955bb2566e0c63ab20f41"
+  },
+  {
+    "path": "sfx/park_ambience_birds.wav",
+    "url": "https://opengameart.org/sites/default/files/park_ambience_birds.wav",
+    "page": "https://opengameart.org/content/park-ambiences",
+    "author": "thimras",
+    "license": "CC0",
+    "use": "春天鸟鸣环境声",
+    "bytes": 86190432,
+    "sha256": "dc1a5ac34b89cab7f8f261b53a23da7c1c5e3cc895aae4cb6fb4a1a04001b2af"
+  },
+  {
+    "path": "sfx/park_ambience_wind.wav",
+    "url": "https://opengameart.org/sites/default/files/park_ambience_wind.wav",
+    "page": "https://opengameart.org/content/park-ambiences",
+    "author": "thimras",
+    "license": "CC0",
+    "use": "树叶风声环境声",
+    "bytes": 73960096,
+    "sha256": "5c381856745b4706e7eba55eb9271a61a530e90c05df8126adb2db89ecfa6c5a"
+  },
+  {
+    "path": "sfx/birds-isaiah658.ogg",
+    "url": "https://opengameart.org/sites/default/files/birds-isaiah658_0.ogg",
+    "page": "https://opengameart.org/content/ambient-bird-sounds",
+    "author": "isaiah658",
+    "license": "CC0",
+    "use": "鸟鸣",
+    "bytes": 544669,
+    "sha256": "359e4e3f9da9d75aac64cede511c7e3ef8b461f9d9f8c230f8f80e44c4b3e35f"
+  },
+  {
+    "path": "sfx/birdchirping071414.wav",
+    "url": "https://opengameart.org/sites/default/files/birdchirping071414.wav",
+    "page": "https://opengameart.org/content/bird-chirping-sounds",
+    "author": "syncopika",
+    "license": "CC0",
+    "use": "鸟鸣点缀",
+    "bytes": 528004,
+    "sha256": "bc6e28bd823b653b2abf3384d4147718603af6bcd98e26166345df71a61eeb08"
+  },
+  {
+    "path": "sfx/cicadas_1.ogg",
+    "url": "https://opengameart.org/sites/default/files/082526-cicadasounds_0.ogg",
+    "page": "https://opengameart.org/content/cicada-sounds",
+    "author": "syncopika",
+    "license": "CC0",
+    "use": "夏天蝉鸣",
+    "bytes": 1480703,
+    "sha256": "ea98710a72f4b8107ab121e55986c25d849e4a7165384ab91d907de4bbce940f"
+  },
+  {
+    "path": "sfx/cicadas_2.ogg",
+    "url": "https://opengameart.org/sites/default/files/082526-cicadasounds2_0.ogg",
+    "page": "https://opengameart.org/content/cicada-sounds",
+    "author": "syncopika",
+    "license": "CC0",
+    "use": "夏天蝉鸣",
+    "bytes": 2003460,
+    "sha256": "b06aab991ccfba815c4b06bbb9c43504e2c2007d10deeb287807c62ca4b2b3e6"
+  },
+  {
+    "path": "sfx/SnowWalk.zip",
+    "url": "https://opengameart.org/sites/default/files/SnowWalk.zip",
+    "page": "https://opengameart.org/content/walking-on-snow-sound",
+    "author": "ignasd",
+    "license": "CC0",
+    "use": "雪地脚步",
+    "bytes": 21081,
+    "sha256": "b5c04e035a9a6aff7ab1972545e005b0ea33911ec8ae7b2fe69cbba42e616ee0"
+  },
+  {
+    "path": "sfx/engine_sound.mp3",
+    "url": "https://opengameart.org/sites/default/files/engine_sound.mp3",
+    "page": "https://opengameart.org/content/engine-sounds2",
+    "author": "pauliuw",
+    "license": "CC0",
+    "use": "汽车引擎",
+    "bytes": 828585,
+    "sha256": "6ac9e73a6e4d0ec2a7d70f1f2c833622f60c60f517488600b070708b2b4c2396"
+  }
+]
