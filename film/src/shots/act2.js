@@ -7,7 +7,7 @@ import { rgba, inkRGB, whiteOf, blob, line, fgOf } from '../ink/brush.js';
 import { GRANDPA, GIRL9, GIRL12, TEEN, WOMAN_MOURN } from '../actors/cast.js';
 import { POSE, walk, run, withVel } from '../actors/rig.js';
 import { drawKite, drawString, drawReel, kiteBridle, drawSwallowGlyph } from '../actors/props.js';
-import { ground, STOOL_X, stoolY, SEAT, stool, pathAt, depthScale, scaled, kiteWobble, insertBg, drawBrushTool, drawArmIn, drawBus, dust, caughtKite } from './common.js';
+import { ground, STOOL_X, stoolY, SEAT, stool, pathAt, depthScale, scaled, kiteWobble, insertBg, drawBrushTool, drawArmIn, drawBus, dust, caughtKite, footsteps } from './common.js';
 import { ROAD_Y } from '../world/landscape.js';
 import { C } from '../world/palette.js';
 
@@ -76,7 +76,8 @@ export const S10 = {
   dur: 8,
   amb: 'summer',
   post: { tint: [1.03, 0.99, 0.93], fgTint: [1.03, 0.98, 0.93] },
-  cues: [{ t: 3.1, kind: 'sfx', name: 'gust' }, { t: 4.9, kind: 'sfx', name: 'tear' }, { t: 4.9, kind: 'hit', name: 'snag' }, { t: 5.9, kind: 'sfx', name: 'run' }],
+  cues: [{ t: 3.1, kind: 'sfx', name: 'gust' }, { t: 4.9, kind: 'sfx', name: 'tear' }, { t: 4.9, kind: 'hit', name: 'snag' },
+    ...footsteps((t) => (1010 - lerp(1010, 960, prog(t, 5.8, 7.4, 'inOutSine'))) / 34, 5.8, 7.4, { offset: 0.06, vel: 0.5, pan: () => -0.1 })],
   render(ctx, t, R) {
     const cam = new Camera(lerp(880, 930, prog(t, 0, 8)), lerp(470, 520, prog(t, 0, 8)), lerp(1.45, 1.6, prog(t, 0, 8)));
     drawMaster(ctx, t + 110, R, {
@@ -152,7 +153,8 @@ export const S12 = {
   dur: 10,
   amb: 'autumn',
   post: { tint: [1.03, 0.99, 0.94] },
-  cues: [{ t: 0.6, kind: 'sfx', name: 'run' }, { t: 2.2, kind: 'sfx', name: 'whoosh' }, { t: 6.5, kind: 'hit', name: 'proud' }],
+  cues: [...footsteps((t) => (lerp(890, 1120, prog(t, 0.4, 3.4, 'inOutSine')) - 890) / 40, 0.4, 3.35, { offset: 0.06, vel: 0.5, pan: (t) => (lerp(890, 1120, prog(t, 0.4, 3.4, 'inOutSine')) - 1030) / 700 }),
+    { t: 2.2, kind: 'sfx', name: 'whoosh' }, { t: 3.0, kind: 'sfx', name: 'flutter_bed', dur: 7.0, amp: 0.45 }, { t: 6.5, kind: 'hit', name: 'proud' }],
   render(ctx, t, R) {
     const cam = new Camera(1030, 535, 1.12);
     drawMaster(ctx, t + 130, R, {
@@ -236,7 +238,10 @@ export const S13 = {
   id: 'S13',
   dur: 14,
   amb: 'morning',
-  cues: [{ t: 1.0, kind: 'sfx', name: 'steps' }, { t: 5.0, kind: 'hit', name: 'wave' }, { t: 9.0, kind: 'sfx', name: 'bus_door' }, { t: 9.8, kind: 'sfx', name: 'bus' }],
+  cues: [
+    ...footsteps((t) => (lerp(0.05, 0.42, prog(t, 1.0, 4.8)) - 0.05) * 900 / 92, 1.0, 4.8, { vel: 0.45, pan: (t) => (pathAt(lerp(0.05, 0.42, prog(t, 1.0, 4.8)))[0] - 970) / 900 }),
+    ...footsteps((t) => (lerp(0.42, 0.93, prog(t, 6.9, 9.3)) - 0.05) * 900 / 92, 6.9, 9.0, { vel: 0.4, pan: (t) => (pathAt(lerp(0.42, 0.93, prog(t, 6.9, 9.3)))[0] - 970) / 900 }),
+    { t: 5.0, kind: 'hit', name: 'wave' }, { t: 9.0, kind: 'sfx', name: 'bus_door' }, { t: 9.8, kind: 'sfx', name: 'bus' }],
   render(ctx, t, R) { renderS13(ctx, t, R, false); },
 };
 export const S13C = {
@@ -296,7 +301,7 @@ export const S15 = {
   dur: 14,
   amb: 'winter_wind',
   post: WINTER_POST,
-  cues: [{ t: 3.4, kind: 'hit', name: 'doze' }, { t: 7.4, kind: 'sfx', name: 'gust_big' }],  // 断线的声音在慢镜头特写 S15B 里
+  cues: [{ t: 0.0, kind: 'sfx', name: 'flutter_bed', dur: 8.4, amp: 0.5 }, { t: 3.4, kind: 'hit', name: 'doze' }, { t: 7.4, kind: 'sfx', name: 'gust_big' }],  // 断线的声音在慢镜头特写 S15B 里
   render(ctx, t, R) {
     const u = prog(t, 0, 14, 'inOutSine');
     const cam = new Camera(lerp(1100, 1150, u), lerp(530, 590, prog(t, 9, 14, 'inOutSine')), lerp(1.85, 2.3, u));
@@ -342,7 +347,9 @@ export const S16 = {
   dur: 16,
   amb: 'winter',
   post: { ...WINTER_POST, dof: 0.3, dofRadius: 3 },
-  cues: [{ t: 0.8, kind: 'sfx', name: 'snow_steps' }, { t: 8.6, kind: 'hit', name: 'pickup' }, { t: 12.0, kind: 'hit', name: 'tilt' }],
+  cues: [
+    ...footsteps((t) => (0.38 - lerp(0.38, 0.02, prog(t, 0.3, 6.4))) * 900 / 84, 0.3, 6.4, { surface: 'snow', vel: 0.55, pan: (t) => (pathAt(lerp(0.38, 0.02, prog(t, 0.3, 6.4)))[0] - 1100) / 700 }),
+    { t: 8.6, kind: 'hit', name: 'pickup' }, { t: 12.0, kind: 'hit', name: 'tilt' }],
   render(ctx, t, R) {
     const u = prog(t, 11.5, 16, 'inOutSine');
     const cam = new Camera(lerp(1130, 1066, u), lerp(612, 572, u), lerp(2.15, 3.2, u));

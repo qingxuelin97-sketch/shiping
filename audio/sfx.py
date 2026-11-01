@@ -82,9 +82,18 @@ def s_brush(seconds=0.8, seed=5):
 
 def s_step(seed, kind="grass"):
     if kind == "snow":
-        return norm(SNOW[seed % 2], -14)
-    n = lowpass(noise(0.12, seed), 700, 2)
-    return norm(n * env(len(n), 0.004, 0.035)[:, None], -18)
+        x = SNOW[seed % 2]
+        # 每一步略变速、变响，避免机械重复
+        r = 1 + RNG.uniform(-0.06, 0.06)
+        idx = np.clip((np.arange(int(len(x) / r)) * r).astype(int), 0, len(x) - 1)
+        return norm(x[idx], -14 + RNG.uniform(-2, 1))
+    # 草地：脚跟的闷响 + 草叶的沙沙
+    thud = lowpass(noise(0.09, seed), 380, 2) * env(int(0.09 * SR), 0.003, 0.03)[:, None]
+    rus = bandpass(noise(0.16, seed + 500), 1800, 6500) * env(int(0.16 * SR), 0.01, 0.06)[:, None] * 0.35
+    x = zeros(0.2)
+    place(x, thud, 0.0, 1.0)
+    place(x, rus, 0.012, 1.0)
+    return norm(x, -18 + RNG.uniform(-2, 1))
 
 
 def s_steps(seconds, rate, kind="grass", seed=0):
@@ -121,6 +130,29 @@ def s_flutter(seconds=2.0, seed=8):
     am = 0.5 + 0.5 * np.sign(np.sin(2 * np.pi * 17 * t + 2 * np.sin(t * 3)))
     e = np.sin(np.linspace(0, np.pi, len(n)))
     return norm(n * (am * e)[:, None], -20)
+
+
+def s_flutter_bed(seconds, amp=0.6, seed=8):
+    """风筝在天上：纸面扑棱声，随风时强时弱"""
+    n = bandpass(noise(seconds, seed), 400, 2400)
+    t = np.arange(len(n)) / SR
+    rng = np.random.default_rng(seed)
+    gust = 0.55 + 0.45 * np.sin(2 * np.pi * 0.23 * t + rng.uniform(0, 6)) * np.sin(2 * np.pi * 0.11 * t + rng.uniform(0, 6))
+    rate = 13 + 4 * np.sin(2 * np.pi * 0.3 * t)
+    ph = 2 * np.pi * np.cumsum(rate) / SR
+    am = (0.5 + 0.5 * np.sin(ph)) ** 3
+    e = np.minimum(1, np.minimum(t / 0.8, (seconds - t) / 0.8))
+    x = n * (am * gust * e)[:, None] + lowpass(noise(seconds, seed + 1), 300, 2) * (gust * e * 0.3)[:, None]
+    return norm(x, -20) * amp
+
+
+def s_string_taut():
+    """放飞瞬间线一下绷紧：短促上扬的“嗡”"""
+    t = np.arange(int(0.6 * SR)) / SR
+    f = 160 + 520 * (1 - np.exp(-t * 9))
+    x = np.sin(2 * np.pi * np.cumsum(f) / SR) * np.exp(-t * 5) * (1 - np.exp(-t * 80))
+    x = stereo(x.astype(np.float32)) + bandpass(noise(0.6, 61), 2000, 6000) * env(int(0.6 * SR), 0.002, 0.08)[:, None] * 0.2
+    return norm(reverb(x, 0.2, 1.0), -16)
 
 
 def s_seal():
@@ -318,6 +350,9 @@ FX = {
     "reel_lift": lambda c: (s_reel_lift(), 0.8, 0.0),
     "bus_far": lambda c: (s_bus_far(), 0.6, -0.6),
     "giggle": lambda c: (s_shimmer(2.0), 0.35, 0.1),
+    "step": lambda c: (s_step(int(c["t"] * 37), c.get("surface", "grass")), c.get("vel", 0.6), c.get("pan", 0.0)),
+    "flutter_bed": lambda c: (s_flutter_bed(c.get("dur", 4.0), c.get("amp", 0.6), int(c["t"] * 7)), 0.8, -0.2),
+    "string_taut": lambda c: (s_string_taut(), 0.8, -0.1),
 }
 
 

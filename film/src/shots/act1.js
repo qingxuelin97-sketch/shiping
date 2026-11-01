@@ -10,7 +10,7 @@ import { blob, rgba, inkRGB, softDot, fgOf } from '../ink/brush.js';
 import { GRANDPA, GIRL6 } from '../actors/cast.js';
 import { POSE, walk, run, hop, withVel } from '../actors/rig.js';
 import { drawKite, drawString, drawReel, kiteBridle, kiteFrameTip, kitePaintTip, drawFlock, drawKnot } from '../actors/props.js';
-import { ground, STOOL_X, stoolY, SEAT, stool, pathAt, depthScale, scaled, kiteWobble, inkText, seal, insertBg, drawBrushTool, drawArmIn } from './common.js';
+import { ground, STOOL_X, stoolY, SEAT, stool, pathAt, depthScale, scaled, kiteWobble, inkText, seal, insertBg, drawBrushTool, drawArmIn, footsteps } from './common.js';
 import { C } from '../world/palette.js';
 
 const SLEEVE = [84, 86, 92];
@@ -257,7 +257,13 @@ export function launchShot(id, FLYER, HELPER, o = {}) {
     id,
     dur: 12,
     post: { dof: 0.3, dofRadius: 3 },
-    cues: [{ t: 0.6, kind: 'sfx', name: 'run' }, { t: 3.0, kind: 'sfx', name: 'crash' }, { t: 3.0, kind: 'hit', name: 'crash' }, { t: 7.2, kind: 'hit', name: 'release' }, { t: 7.3, kind: 'sfx', name: 'whoosh' }, { t: 9.5, kind: 'sfx', name: 'flutter' }],
+    cues: [
+      // 跑：与画面上的跑步相位同步（run 的落地相位约 0.06）
+      ...footsteps((t) => (lerp(1060, 1320, prog(t, 0.5, 3.4, 'inOutSine')) - 1060) / 42, 0.5, 3.35, { offset: 0.06, surface: 'grass', vel: 0.5, pan: (t) => (lerp(1060, 1320, prog(t, 0.5, 3.4, 'inOutSine')) - 1130) / 420, who: 'child' }),
+      // 大人走过去捡风筝、再走回来
+      ...footsteps((t) => (1352 - lerp(1352, 1150, prog(t, 3.2, 4.6, 'inOutSine'))) / 95, 3.2, 4.6, { surface: 'grass', vel: 0.55, pan: (t) => (lerp(1352, 1150, prog(t, 3.2, 4.6, 'inOutSine')) - 1130) / 420 }),
+      ...footsteps((t) => (1150 - lerp(1150, 1060, prog(t, 5.2, 6.4))) / 95, 5.2, 6.4, { surface: 'grass', vel: 0.5, pan: (t) => (lerp(1150, 1060, prog(t, 5.2, 6.4)) - 1130) / 420 }),
+      { t: 3.0, kind: 'sfx', name: 'crash' }, { t: 3.0, kind: 'hit', name: 'crash' }, { t: 7.2, kind: 'hit', name: 'release' }, { t: 7.3, kind: 'sfx', name: 'whoosh' }, { t: 7.22, kind: 'sfx', name: 'string_taut' }, { t: 7.8, kind: 'sfx', name: 'flutter_bed', dur: 4.6, amp: 0.8 }],
     render(ctx, t, R) {
       const cz = track([[0, [1130, 656, 2.35]], [7.0, [1120, 648, 2.35]], [11.5, [1010, 560, 1.85]]], t);
       const cam = new Camera(cz[0], cz[1], cz[2]).withShake(t, 1.0, 0.3, 9);
@@ -356,7 +362,7 @@ const SKY_KITE = [520, -760];
 export const S07 = {
   id: 'S07',
   dur: 6,
-  cues: [{ t: 0.2, kind: 'sfx', name: 'wind_up' }],
+  cues: [{ t: 0.2, kind: 'sfx', name: 'wind_up' }, { t: 0.0, kind: 'sfx', name: 'flutter_bed', dur: 6.2, amp: 0.55 }],
   render(ctx, t, R) {
     const u = prog(t, 0, 6, 'inOutSine');
     const cam = new Camera(lerp(1220, 640, u), lerp(620, -600, u), lerp(2.3, 2.6, u));
@@ -380,7 +386,7 @@ export const S07 = {
 export const S08 = {
   id: 'S08',
   dur: 8,
-  cues: [{ t: 1.0, kind: 'sfx', name: 'swallows' }, { t: 2.4, kind: 'hit', name: 'title' }, { t: 5.2, kind: 'sfx', name: 'seal' }, { t: 5.2, kind: 'hit', name: 'seal' }],
+  cues: [{ t: 0.0, kind: 'sfx', name: 'flutter_bed', dur: 8.0, amp: 0.45 }, { t: 1.0, kind: 'sfx', name: 'swallows' }, { t: 2.4, kind: 'hit', name: 'title' }, { t: 5.2, kind: 'sfx', name: 'seal' }, { t: 5.2, kind: 'hit', name: 'seal' }],
   render(ctx, t, R) {
     const cam = new Camera(SKY_KITE[0] + 30 - t * 6, SKY_KITE[1] + 40 - t * 3, 3.4);
     ctx.setTransform(R.base, 0, 0, R.base, 0, 0);

@@ -13,7 +13,7 @@ import { S26, S27, POSTER } from './shots/end.js';
 
 // 环境声标签（供混音脚本使用）
 const AMB = { S01: 'opening', S02: 'spring', S03: 'insert', S04: 'insert', S05: 'spring', S06: 'spring', S07: 'sky', S08: 'sky', S09: 'spring' };
-for (const [s, a] of [[S01, 'opening'], [S02, 'spring'], [S03, 'insert'], [S04, 'insert'], [S05, 'spring'], [S06, 'spring'], [S07, 'sky'], [S08, 'sky'], [S09, 'spring'], [S11, 'insert'], [S21B, 'insert'], [S21C, 'insert']]) s.amb = a;
+for (const [s, a] of [[S01, 'opening'], [S02, 'spring'], [S03, 'insert'], [S04, 'insert'], [S05, 'spring'], [S06, 'spring'], [S07, 'sky'], [S08, 'sky'], [S09, 'spring'], [S11, 'insert'], [S21B, 'insert'], [S21C, 'insert'], [S22, 'spring']]) s.amb = a;
 void AMB;
 
 // v2：在动情处切开原镜头，插入特写

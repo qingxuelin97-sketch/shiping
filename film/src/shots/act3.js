@@ -10,7 +10,7 @@ import { GRANDPA, GIRL6, WOMAN, DAUGHTER } from '../actors/cast.js';
 import { POSE, walk, run } from '../actors/rig.js';
 import { drawKite, drawString, drawReel, drawKnot, kiteBridle, kitePaintTip, drawFlock } from '../actors/props.js';
 import { drawPetals } from '../world/particles.js';
-import { ground, STOOL_X, stoolY, SEAT, stool, pathAt, depthScale, scaled, kiteWobble, insertBg, drawBrushTool, drawArmIn, caughtKite } from './common.js';
+import { ground, STOOL_X, stoolY, SEAT, stool, pathAt, depthScale, scaled, kiteWobble, insertBg, drawBrushTool, drawArmIn, caughtKite, footsteps } from './common.js';
 import { caughtKiteDraw } from './act2.js';
 import { S05, launchShot, bigHead } from './act1.js';
 import { C } from '../world/palette.js';
@@ -47,7 +47,9 @@ export const S18 = {
   id: 'S18',
   dur: 8,
   amb: 'spring',
-  cues: [{ t: 0.4, kind: 'sfx', name: 'swallows' }, { t: 1.6, kind: 'sfx', name: 'child_run' }],
+  cues: [{ t: 0.4, kind: 'sfx', name: 'swallows' },
+    ...footsteps((t) => (0.9 - lerp(0.9, 0.5, prog(t, 0, 8))) * 900 / 95, 0.2, 8, { vel: 0.4, pan: (t) => (pathAt(lerp(0.9, 0.5, prog(t, 0, 8)))[0] - 980) / 900 }),
+    ...footsteps((t) => (t < 1.4 ? (0.86 - lerp(0.86, 0.8, t / 1.4)) * 900 / 60 : (0.86 - lerp(0.8, 0.06, prog(t, 1.4, 7.4, 'inOutSine'))) * 900 / 40), 1.4, 7.35, { offset: 0.06, vel: 0.4, pan: (t) => (pathAt(lerp(0.8, 0.06, prog(t, 1.4, 7.4, 'inOutSine')))[0] - 980) / 900 })],
   render(ctx, t, R) {
     const u = prog(t, 0, 8, 'inOutSine');
     const cam = new Camera(lerp(960, 1000, u), lerp(540, 548, u), lerp(1.0, 1.06, u));
@@ -80,7 +82,8 @@ export const S19 = {
   dur: 8,
   amb: 'spring',
   post: (t) => ({ dof: lerp(0.45, 0.9, prog(t, 3, 7.4)), dofRadius: lerp(3.5, 6, prog(t, 3, 7.4)) }),
-  cues: [{ t: 1.5, kind: 'hit', name: 'point' }, { t: 5.6, kind: 'hit', name: 'patch' }],
+  cues: [{ t: 1.5, kind: 'hit', name: 'point' }, { t: 5.6, kind: 'hit', name: 'patch' },
+    ...footsteps((t) => (lerp(960, 1050, prog(t, 0, 2.6, 'inOutSine')) - 960) / 95, 0, 2.6, { vel: 0.5, pan: (t) => (lerp(960, 1050, prog(t, 0, 2.6, 'inOutSine')) - 1110) / 360 })],
   render(ctx, t, R) {
     let cam;
     const kp = { x: 1070, y: 586 };
@@ -255,7 +258,7 @@ export const S23 = {
   id: 'S23',
   dur: 8,
   amb: 'sky',
-  cues: [{ t: 0.2, kind: 'sfx', name: 'wind_up' }, { t: 2.4, kind: 'hit', name: 'knot_pass' }, { t: 5.0, kind: 'sfx', name: 'swallows' }],
+  cues: [{ t: 0.2, kind: 'sfx', name: 'wind_up' }, { t: 0.0, kind: 'sfx', name: 'flutter_bed', dur: 8.0, amp: 0.55 }, { t: 2.4, kind: 'hit', name: 'knot_pass' }, { t: 5.0, kind: 'sfx', name: 'swallows' }],
   render(ctx, t, R) {
     const u = prog(t, 0, 6.2, 'inOutSine');
     const cam = new Camera(lerp(1240, 560, u), lerp(620, -730, u), lerp(2.4, 3.0, u));

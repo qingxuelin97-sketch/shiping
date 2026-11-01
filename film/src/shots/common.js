@@ -219,4 +219,20 @@ export function dust(ctx, x, y, t, amt = 1) {
   ctx.restore();
 }
 
+// 脚步提示点：按步态相位找每一次脚落地的时刻（walk 在相位 0 与 0.5 落地，run 晚一点），
+// 声像跟着人物在画面上的横向位置。phaseAt(t) 与镜头里画人物用的是同一套公式。
+export function footsteps(phaseAt, t0, t1, o = {}) {
+  const out = [];
+  const off = o.offset ?? 0;
+  let prev = phaseAt(t0) - off;
+  for (let t = t0 + 0.004; t <= t1; t += 0.004) {
+    const ph = phaseAt(t) - off;
+    if (Math.floor(ph * 2) !== Math.floor(prev * 2) && ph > prev) {
+      out.push({ t: +t.toFixed(3), kind: 'sfx', name: 'step', surface: o.surface || 'grass', pan: +(o.pan ? clamp(o.pan(t), -1, 1) : 0).toFixed(2), vel: o.vel ?? 0.6, who: o.who || '' });
+    }
+    prev = ph;
+  }
+  return out;
+}
+
 export { Camera, applyCamera };

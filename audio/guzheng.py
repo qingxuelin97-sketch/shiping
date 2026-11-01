@@ -118,6 +118,9 @@ class Guzheng:
         if n > nd:
             k = np.linspace(0, 1, n - nd)
             env[nd:] = np.exp(-4 * k) * (1 - k)
+        # 起音处 1.5 毫秒的淡入：去掉数字上的跳变（咔哒声），拨弦的清脆不受影响
+        kf = int(0.0015 * SR)
+        env[:kf] *= np.sin(np.linspace(0, np.pi / 2, kf)) ** 2
         # 各音区响度拉平（低音弦能量大，高音弦小）
         lev = float(np.interp(key, [45, 50, 62, 74, 86, 93], [2.1, -0.2, -4.5, -10.0, -14.4, -16.9]))
         y = y * env * self.gain * 10 ** ((-12 - lev) / 20)
