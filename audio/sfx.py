@@ -226,6 +226,63 @@ def s_busdoor():
     return x
 
 
+# ---------------- v2 新增 ----------------
+def s_clap(n=3, gap=0.3, seed=12):
+    x = zeros(n * gap + 0.4)
+    for k in range(n):
+        c = bandpass(noise(0.06, seed + k), 900, 3200) * env(int(0.06 * SR), 0.001, 0.02)[:, None]
+        place(x, c, 0.02 + k * gap * (1 + RNG.uniform(-0.06, 0.06)), 0.9 - 0.15 * (k == n - 1))
+    return norm(reverb(x, 0.2, 0.8), -10)
+
+
+def s_reel_tap():
+    t = np.arange(int(0.35 * SR)) / SR
+    knock = np.sin(2 * np.pi * 310 * t) * np.exp(-t * 30) + 0.4 * np.sin(2 * np.pi * 760 * t) * np.exp(-t * 45)
+    x = stereo(knock.astype(np.float32)) + bandpass(noise(0.35, 21), 1500, 5000) * env(int(0.35 * SR), 0.002, 0.05)[:, None] * 0.12
+    return norm(reverb(x, 0.25, 1.2), -12)
+
+
+def s_fiber(i=0):
+    # 一根纤维绷断：慢镜头里拉长、压低的“叮”，带长尾
+    f = 1900 - i * 260
+    t = np.arange(int(1.6 * SR)) / SR
+    x = np.sin(2 * np.pi * f * t + 2 * np.sin(2 * np.pi * 7 * t)) * np.exp(-t * 4.5)
+    x += np.sin(2 * np.pi * f * 2.76 * t) * np.exp(-t * 9) * 0.3
+    x = stereo(x.astype(np.float32)) + bandpass(noise(1.6, 30 + i), 3000, 9000) * env(int(1.6 * SR), 0.001, 0.02)[:, None] * 0.3
+    return norm(reverb(x, 0.45, 2.6), -14)
+
+
+def s_snap_slow():
+    # 断开：低沉拉长的“嘣”+ 往外甩的风声
+    t = np.arange(int(3.0 * SR)) / SR
+    tw = np.sin(2 * np.pi * (180 * np.exp(-t * 1.5) + 70) * t) * np.exp(-t * 2.2)
+    x = stereo(tw.astype(np.float32)) * 0.8
+    x += lowpass(noise(3.0, 33), 700, 2) * env(int(3.0 * SR), 0.004, 0.5)[:, None] * 0.6
+    place(x, s_whoosh(2.2, 34), 0.15, 0.5)
+    return norm(reverb(x, 0.5, 3.0), -6)
+
+
+def s_snow_brush(seed=40):
+    x = zeros(1.0)
+    for k in range(2):
+        c = bandpass(noise(0.32, seed + k), 1200, 6000) * np.sin(np.linspace(0, np.pi, int(0.32 * SR)))[:, None] ** 2
+        place(x, c, 0.05 + k * 0.34, 0.8)
+    return norm(x, -18)
+
+
+def s_reel_lift():
+    x = zeros(1.0)
+    place(x, s_reel_tap(), 0.0, 0.6)
+    place(x, s_step(44, "snow"), 0.05, 0.5)
+    return norm(x, -14)
+
+
+def s_bus_far():
+    x = lowpass(seg(ENGINE, 2.0, 6.0), 500, 2)
+    x = fade(x, 0.3, 2.8)
+    return norm(x, -26)
+
+
 FX = {
     "inkdrop": lambda c: (s_inkdrop(), 0.9, 0.0),
     "bloom": lambda c: (s_bloom(), 0.6, 0.0),
@@ -253,6 +310,14 @@ FX = {
     "bus_door": lambda c: (s_busdoor(), 0.6, -0.5),
     "rustle": lambda c: (s_rustle(), 0.7, 0.0),
     "knot": lambda c: (s_knot(), 0.8, 0.0),
+    "clap": lambda c: (s_clap(), 0.7, -0.15),
+    "reel_tap": lambda c: (s_reel_tap(), 0.8, -0.1),
+    "fiber": lambda c: (s_fiber(c.get("i", 0)), 0.75, -0.25 + 0.2 * c.get("i", 0)),
+    "snap_slow": lambda c: (s_snap_slow(), 1.0, -0.1),
+    "snow_brush": lambda c: (s_snow_brush(), 0.7, 0.0),
+    "reel_lift": lambda c: (s_reel_lift(), 0.8, 0.0),
+    "bus_far": lambda c: (s_bus_far(), 0.6, -0.6),
+    "giggle": lambda c: (s_shimmer(2.0), 0.35, 0.1),
 }
 
 

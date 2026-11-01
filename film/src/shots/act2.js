@@ -296,7 +296,7 @@ export const S15 = {
   dur: 14,
   amb: 'winter_wind',
   post: WINTER_POST,
-  cues: [{ t: 3.4, kind: 'hit', name: 'doze' }, { t: 7.4, kind: 'sfx', name: 'gust_big' }, { t: SNAP, kind: 'sfx', name: 'snap' }, { t: SNAP, kind: 'hit', name: 'snap' }],
+  cues: [{ t: 3.4, kind: 'hit', name: 'doze' }, { t: 7.4, kind: 'sfx', name: 'gust_big' }],  // 断线的声音在慢镜头特写 S15B 里
   render(ctx, t, R) {
     const u = prog(t, 0, 14, 'inOutSine');
     const cam = new Camera(lerp(1100, 1150, u), lerp(530, 590, prog(t, 9, 14, 'inOutSine')), lerp(1.85, 2.3, u));
