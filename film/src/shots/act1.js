@@ -12,6 +12,7 @@ import { POSE, walk, run, hop, withVel } from '../actors/rig.js';
 import { drawKite, drawString, drawReel, kiteBridle, kiteFrameTip, kitePaintTip, drawFlock, drawKnot } from '../actors/props.js';
 import { ground, STOOL_X, stoolY, SEAT, stool, pathAt, depthScale, scaled, kiteWobble, inkText, seal, insertBg, drawBrushTool, drawArmIn, footsteps } from './common.js';
 import { C } from '../world/palette.js';
+import { writeColumn } from '../type/write.js';
 
 const SLEEVE = [84, 86, 92];
 
@@ -77,8 +78,9 @@ export const S01 = {
     }
     // 题诗（竖排，自右向左）
     const fade = 1 - prog(t, 8.4, 9.8, 'inOutSine');
-    inkText(ctx, '儿童散学归来早', 1610, 250, { vertical: true, size: 54, p: prog(t, 3.2, 5.6) * fade, stagger: 0.35, tone: 0.88 });
-    inkText(ctx, '忙趁东风放纸鸢', 1530, 300, { vertical: true, size: 54, p: prog(t, 4.6, 7.0) * fade, stagger: 0.35, tone: 0.88 });
+    // 题诗按笔顺逐字写出
+    writeColumn(ctx, '儿童散学归来早', 1610, 250, 62, 57, prog(t, 3.2, 6.1, 'linear'), { alpha: fade, tone: 0.88 });
+    writeColumn(ctx, '忙趁东风放纸鸢', 1530, 300, 62, 57, prog(t, 4.6, 7.5, 'linear'), { alpha: fade, tone: 0.88 });
     inkText(ctx, '清 · 高鼎《村居》', 1452, 520, { vertical: true, size: 26, p: prog(t, 6.6, 7.6) * fade, tone: 0.6, font: 'ZCOOLXiaoWei' });
   },
 };
@@ -92,7 +94,7 @@ export const S02 = {
     const k = prog(t, 0, 8, 'inOutSine');
     const cam = new Camera(lerp(960, 1000, k), lerp(540, 552, k), lerp(1.0, 1.07, k));
     drawMaster(ctx, t + 20, R, {
-      cam, season: 'spring', smoke: 1, petals: 16, wind: 0.5, beams: 0.6,
+      cam, season: 'spring', smoke: 1, petals: 16, wind: 0.5, beams: 0.6, clouds: 0.5,
       actors: (c) => {
         const walker = (fig, s0, s1, extra = {}) => {
           const s = lerp(s0, s1, t / 8);
@@ -407,8 +409,8 @@ export const S08 = {
     });
     // 片名
     ctx.setTransform(R.base, 0, 0, R.base, 0, 0);
-    const tp = prog(t, 2.3, 4.8);
-    inkText(ctx, '纸鸢', 1520, 330, { vertical: true, size: 170, p: tp, stagger: 0.45, font: 'MaShanZheng', tone: 0.92 });
+    // 片名：毛笔按笔顺写出“纸鸢”
+    writeColumn(ctx, '纸鸢', 1520, 330, 196, 182, prog(t, 2.1, 5.0, 'linear'), { tone: 0.93, halo: 1.2 });
     seal(ctx, 1640, 720, 74, '鸢', prog(t, 5.15, 5.6));
     inkText(ctx, 'The Paper Kite', 1520, 860, { size: 42, p: prog(t, 5.8, 7.0), font: 'Cormorant', weight: 'italic 500', tone: 0.7 });
   },
@@ -421,7 +423,7 @@ export const S09 = {
   render(ctx, t, R) {
     const cam = new Camera(980, 520, 1.02 - t * 0.003);
     drawMaster(ctx, t + 90, R, {
-      cam, season: 'spring', wind: 0.5, smoke: 0.6, petals: 20, beams: 0.9,
+      cam, season: 'spring', wind: 0.5, smoke: 0.6, petals: 20, beams: 0.9, clouds: 0.5,
       frame: { corner: 'tl', kind: 'blossom', len: 640, dip: 0.28, blur: 14, alpha: 0.95, seed: 9 },
       actors: (c) => {
         stool(c);

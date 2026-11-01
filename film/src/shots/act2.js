@@ -9,6 +9,8 @@ import { POSE, walk, run, withVel } from '../actors/rig.js';
 import { drawKite, drawString, drawReel, kiteBridle, drawSwallowGlyph } from '../actors/props.js';
 import { ground, STOOL_X, stoolY, SEAT, stool, pathAt, depthScale, scaled, kiteWobble, insertBg, drawBrushTool, drawArmIn, drawBus, dust, caughtKite, footsteps } from './common.js';
 import { ROAD_Y } from '../world/landscape.js';
+import { drawFireflies, drawFootprints } from '../world/details.js';
+import { drawFlock } from '../actors/props.js';
 import { C } from '../world/palette.js';
 
 const SLEEVE = [84, 86, 92];
@@ -81,8 +83,10 @@ export const S10 = {
   render(ctx, t, R) {
     const cam = new Camera(lerp(880, 930, prog(t, 0, 8)), lerp(470, 520, prog(t, 0, 8)), lerp(1.45, 1.6, prog(t, 0, 8)));
     drawMaster(ctx, t + 110, R, {
-      cam, season: 'summer', wind: 0.75, smoke: 0.5,
+      cam, season: 'summer', wind: 0.75, smoke: 0.5, clouds: 0.5,
       sky: { horizon: C.sunset, horAlpha: 0.5, sun: [430, 575, 40], sunColor: [226, 150, 112], sunAlpha: 0.8 },
+      // 天色渐暗，草丛里亮起萤火虫
+      front: (c) => drawFireflies(c, t, { region: [560, 420, 1240, 740], count: 24, amount: prog(t, 4.2, 6.8) }),
       actors: (c) => {
         stool(c);
         let gx = 1010;
@@ -158,7 +162,12 @@ export const S12 = {
   render(ctx, t, R) {
     const cam = new Camera(1030, 535, 1.12);
     drawMaster(ctx, t + 130, R, {
-      cam, season: 'autumn', fallingLeaves: 26, wind: 0.8, smoke: 0.4,
+      cam, season: 'autumn', fallingLeaves: 26, wind: 0.8, smoke: 0.4, clouds: 0.5,
+      // 一行雁往南飞
+      front: (c) => drawFlock(c, t, {
+        count: 7, seed: 31, speed: 0.045, spread: 0, size: 7, jitter: 3, flapRate: 2.4, alpha: 0.85,
+        path: (u, i) => { const row = Math.ceil(i / 2), side = i % 2 ? 1 : -1; const q = u % 1; return [lerp(2000, 150, q) + row * 30, lerp(170, 250, q) + side * row * 15]; },
+      }),
       actors: (c) => {
         stool(c);
         GRANDPA.draw(c, { ...POSE.sitOld, x: STOOL_X + 3, y: stoolY(), sit: SEAT, facing: -1, head: lerp(-0.1, -0.45, prog(t, 2, 6)), mouth: 'smile' }, t);
@@ -189,7 +198,7 @@ function renderS13(ctx, t, R, after = false) {
   const u = prog(t, 0, 14, 'inOutSine');
   const cam = new Camera(lerp(950, 990, u), lerp(588, 580, u), lerp(1.0, 1.04, u));
   drawMaster(ctx, t + 150, R, {
-    cam, season: 'summer', wind: 0.35, smoke: 0.8, sky: { horizon: [250, 236, 216], horAlpha: 0.45 }, beams: 0.35, beamOpts: { alpha: 0.1 },
+    cam, season: 'summer', wind: 0.35, smoke: 0.8, sky: { horizon: [250, 236, 216], horAlpha: 0.45 }, beams: 0.35, beamOpts: { alpha: 0.1 }, clouds: 0.45,
     actors: (c) => {
       stool(c);
       // 汽车（特写之后时间往前多走一些）
@@ -262,7 +271,7 @@ function lonelySpring(id, v) {
     render(ctx, t, R) {
       const cam = new Camera(1000 + v * 8, 532, 1.1 + v * 0.03);
       drawMaster(ctx, t + 170 + v * 17, R, {
-        cam, season: 'spring', petals: 14, wind: 0.5, smoke: 0.5 - v * 0.2, beams: 0.5,
+        cam, season: 'spring', petals: 14, wind: 0.5, smoke: 0.5 - v * 0.2, beams: 0.5, clouds: 0.45,
         actors: (c) => {
           stool(c);
           const kp = [[560, 250], [640, 330], [730, 430]][v];
@@ -342,6 +351,11 @@ export const S15 = {
 };
 
 // ---------------- S16 雪：空凳，捡起线拐子 ----------------
+// 脚印：与脚步声同一套步态时刻
+const S16_STEPS = footsteps((t) => (0.38 - lerp(0.38, 0.02, prog(t, 0.3, 6.4))) * 900 / 84, 0.3, 6.4).map((c) => {
+  const p = pathAt(lerp(0.38, 0.02, prog(c.t, 0.3, 6.4)));
+  return { t: c.t, x: p[0], y: p[1] };
+});
 export const S16 = {
   id: 'S16',
   dur: 16,
@@ -358,6 +372,8 @@ export const S16 = {
       frame: { corner: 'tr', kind: 'snow', len: 520, dip: 0.3, blur: 12, alpha: 0.9, seed: 8 },
       actors: (c) => {
         stool(c, 1);
+        // 她走过的地方留下一串脚印
+        drawFootprints(c, S16_STEPS.filter((s) => s.t <= t));
         // 剪辑：S16（0–8.3）→ 特写 S16B 拾起线拐子 → S16C（9.2 起）
         const holding = t > 9.0;
         const pf = (tt) => {

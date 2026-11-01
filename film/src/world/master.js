@@ -4,6 +4,7 @@ import { Camera, applyCamera } from '../core/camera.js';
 import { lerp } from '../core/math.js';
 import { inkRGB, fgOf, whiteOf } from '../ink/brush.js';
 import { frameBranch, drawBeams } from './frame.js';
+import { drawVillage, drawPagoda, drawRidgeTrees, drawWildflowers, drawStones, drawSteps, drawCourtyard } from './details.js';
 import { MASTER_RANGES, drawRange, drawMist } from './mountains.js';
 import { drawHill, drawBank, drawPath, drawRoad, drawCottage, drawGrass, drawSky } from './landscape.js';
 import { drawPetals, drawLeavesFalling, drawSnowfall } from './particles.js';
@@ -42,16 +43,28 @@ export function drawMaster(ctx, t, R, o = {}) {
   MASTER_RANGES.forEach((L, i) => {
     const col = mixc(inkRGB(L.tone), S.mountainTint.map((v) => v * (0.55 + L.tone * 0.4)), 0.25);
     drawRange(ctx, L, cam, R.base, { color: col.map(Math.round) });
+    // 远景点景：中景山脊上一座小塔；近山脊上几株小树；山谷里半掩在雾里的村落
+    if (i === 1 && !o.noVillage) drawPagoda(ctx, cam, R.base, L);
+    if (i === 2 && !o.noVillage) {
+      drawRidgeTrees(ctx, cam, R.base, L, [150, 600, 990, 1830]);
+      drawVillage(ctx, cam, R.base, { snow: snow > 0.4 ? snow : 0 });
+    }
     drawMist(ctx, cam, R.base, [MIST[i]], t);
   });
 
   applyCamera(ctx, cam, 1, R.base);
   drawHill(ctx, t, { seasonColor: S.hill, colorAmt: S.hillAmt, snow });
+  // 山坡上的野花（春天满坡，夏天零星）与石块
+  const fl = (o.flowers ?? (season === 'spring' ? 1 : season === 'summer' ? 0.35 : 0)) * (1 - snow);
+  if (fl > 0) drawWildflowers(ctx, t, { amount: fl });
+  drawStones(ctx);
   if (!o.hideCottage) {
     drawRoad(ctx, { color: season === 'winter' ? [214, 220, 228] : undefined });
     drawCottage(ctx, t, { smoke: o.smoke ?? 0, snow });
+    drawCourtyard(ctx, t, { snow });
   }
   drawPath(ctx, { color: season === 'winter' ? [214, 220, 228] : undefined });
+  drawSteps(ctx, { alpha: 1 - snow * 0.7 });
   drawBank(ctx, t, { seasonColor: S.hill, colorAmt: S.hillAmt, snow });
   if (o.behindTree) o.behindTree(ctx);
   TREE.draw(ctx, t, {

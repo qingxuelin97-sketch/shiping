@@ -23,6 +23,14 @@ export const MASTER_RANGES = [
   },
 ];
 
+// 山脊在 x 处的高度（与 ridgeOf 同一公式），供远景点景（塔、小树）贴在山脊上
+export function ridgeY(L, x) {
+  let h = fbm1(x * L.freq, L.seed, 5) * 0.45 + 0.35;
+  h += Math.abs(noise1(x * L.freq * 3.1, L.seed + 3)) * 0.12;
+  for (const pk of L.peaks) h += pk.h * Math.exp(-Math.pow((x - pk.x) / pk.w, 2));
+  return L.baseY - L.amp * h;
+}
+
 function ridgeOf(L) {
   const pts = [];
   for (let x = L.x0; x <= L.x1; x += 5) {

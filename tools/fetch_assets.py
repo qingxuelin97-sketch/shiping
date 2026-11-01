@@ -97,6 +97,66 @@ def safe_extract(zpath, outdir):
                 dst.write(src.read())
 
 
+# ---- v2：采样库（git 稀疏检出，只取用到的乐器）----
+VSCO_SFZ = ["ViolinEnsSusVib.sfz", "ViolaEnsSusVib.sfz", "CelloEnsSusVib.sfz", "ContrabassSusVB.sfz", "SViolinVib.sfz",
+            "FluteSusVib.sfz", "FluteExpVib.sfz", "Harp.sfz", "Glockenspiel.sfz", "Timpani.sfz", "CelloEnsPizz.sfz", "ViolinEnsPizz.sfz"]
+REPOS = [
+    # (目录, 仓库, 分支, 作者, 许可, 用途)
+    ("samples/vsco2", "https://github.com/sgossner/VSCO-2-CE", "SFZ", "Versilian Studios (Sam Gossner)", "CC0 1.0",
+     "弦乐组、独奏小提琴（二胡）、长笛（笛、箫）、竖琴、钟琴、定音鼓、拨弦"),
+    ("samples/salamander", "https://github.com/sfzinstruments/SalamanderGrandPiano", None, "Alexander Holm", "CC-BY 3.0",
+     "钢琴（取 v4/v7/v10/v13 四个力度层）"),
+]
+
+
+def git(*args, cwd=None):
+    import subprocess
+    subprocess.run(["git", *args], cwd=cwd, check=True)
+
+
+def sparse_repo(rel, url, branch, patterns_fn):
+    dest = os.path.join(ASSETS, rel)
+    if not os.path.isdir(os.path.join(dest, ".git")):
+        cmd = ["clone", "--filter=blob:none", "--no-checkout", "--depth", "1"]
+        if branch:
+            cmd += ["-b", branch]
+        git(*cmd, url, dest)
+        git("config", "gc.auto", "0", cwd=dest)
+        git("sparse-checkout", "init", "--no-cone", cwd=dest)
+    # 第一步只检出说明文件与 SFZ，再按 SFZ 引用的采样补全
+    with open(os.path.join(dest, ".git", "info", "sparse-checkout"), "w") as f:
+        f.write("/LICENSE\n/README.md\n/*.sfz\n")
+    git("read-tree", "-mu", "HEAD", cwd=dest)
+    pats = patterns_fn(dest)
+    with open(os.path.join(dest, ".git", "info", "sparse-checkout"), "w") as f:
+        f.write("/LICENSE\n/README.md\n/*.sfz\n" + "".join("/" + p + "\n" for p in pats))
+    git("read-tree", "-mu", "HEAD", cwd=dest)
+    return dest
+
+
+def vsco_patterns(dest):
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    from sfz_paths import sfz_samples
+    import subprocess
+    tree = subprocess.run(["git", "ls-tree", "-r", "--name-only", "HEAD"], cwd=dest, capture_output=True, text=True, check=True).stdout.split("\n")
+    low = {t.lower(): t for t in tree if t}
+    out = []
+    for name in VSCO_SFZ:
+        for p in sfz_samples(os.path.join(dest, name)):
+            q = low.get(p.lower())
+            if q and q not in out:
+                out.append(q)
+    return out
+
+
+def salamander_patterns(dest):
+    notes = ["A0", "C1", "D#1", "F#1"]
+    for o in range(1, 8):
+        notes += [f"A{o}", f"C{o + 1}", f"D#{o + 1}", f"F#{o + 1}"]
+    notes = [n for n in notes if n not in ("D#8", "F#8")]
+    return [f"Samples/{n}v{v}.flac" for n in notes for v in (4, 7, 10, 13)]
+
+
 def main():
     manifest_path = os.path.join(ASSETS, "manifest.json")
     old = {}
@@ -117,6 +177,11 @@ def main():
             safe_extract(dest, dest[:-4])
         out.append({"path": rel, "url": url, "page": page, "author": author, "license": lic,
                     "use": use, "bytes": os.path.getsize(dest), "sha256": sha256(dest)})
+    for (rel, url, branch, author, lic, use), fn in zip(REPOS, (vsco_patterns, salamander_patterns)):
+        print("git  ", rel)
+        dest = sparse_repo(rel, url, branch, fn)
+        n = sum(1 for _, _, fs in os.walk(dest) for x in fs if x.lower().endswith((".wav", ".flac")))
+        out.append({"path": rel, "url": url, "page": url, "author": author, "license": lic, "use": use, "files": n})
     with open(manifest_path, "w", encoding="utf-8") as f:
         json.dump(out, f, ensure_ascii=False, indent=2)
     print("manifest:", manifest_path, len(out), "items")

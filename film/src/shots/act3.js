@@ -54,7 +54,7 @@ export const S18 = {
     const u = prog(t, 0, 8, 'inOutSine');
     const cam = new Camera(lerp(960, 1000, u), lerp(540, 548, u), lerp(1.0, 1.06, u));
     drawMaster(ctx, t + 300, R, {
-      cam, season: 'spring', smoke: 0, petals: 18, wind: 0.5, beams: 0.6,
+      cam, season: 'spring', smoke: 0, petals: 18, wind: 0.5, beams: 0.6, clouds: 0.5,
       actors: (c) => {
         stool(c);
         caughtKiteDraw(c, t, { aged: 0.6, thread: 34 });
@@ -334,7 +334,7 @@ export const S25 = {
     const u = prog(t, 0, 8, 'inOutSine');
     const cam = new Camera(lerp(980, 900, u), lerp(530, 500, u), lerp(1.04, 0.98, u));
     drawMaster(ctx, t + 440, R, {
-      cam, season: 'spring', wind: 0.55, smoke: 0.6, petals: 22, beams: 0.6 + prog(t, 0, 5) * 0.8, beamOpts: { alpha: 0.16 },
+      cam, season: 'spring', wind: 0.55, smoke: 0.6, petals: 22, beams: 0.6 + prog(t, 0, 5) * 0.8, beamOpts: { alpha: 0.16 }, clouds: 0.5,
       actors: (c) => {
         stool(c);
         WOMAN.draw(c, { ...POSE.lookUp, x: 1062, y: ground(1062), facing: -1, mouth: 'smile' }, t);

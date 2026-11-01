@@ -17,29 +17,24 @@ export const S26 = {
   },
 };
 
-const CARDS = [
-  { t0: 0.6, t1: 4.6, kind: 'title' },
-  {
-    t0: 5.0, t1: 9.2,
-    lines: [['故事 · 美术 · 动画 · 配乐', 'Story · Art · Animation · Music'], ['全片画面与配乐由代码逐帧生成', 'every frame and every note generated in code']],
-  },
-  {
-    t0: 9.6, t1: 13.8,
-    lines: [['音效（CC0 · OpenGameArt）', 'Sound effects (CC0, OpenGameArt)'], ['bashar3a · remaxim · thimras · isaiah658', 'syncopika · ignasd · pauliuw']],
-  },
-  {
-    t0: 14.2, t1: 18.4,
-    lines: [['音色 GeneralUser GS — S. Christian Collins', 'Instruments: GeneralUser GS'], ['字体 马善政 · 志莽行书 · 站酷小薇 · Cormorant', 'Fonts under the SIL Open Font License']],
-  },
-  {
-    t0: 18.8, t1: 23.2,
-    lines: [['题诗 清 · 高鼎《村居》', 'Poem: Gao Ding, “Village Life” (Qing dynasty)'], ['工具 Chromium · WebGL · FFmpeg · Python · Claude', 'Tools']],
-  },
+// 每张卡片约 3.6 秒；v2 加入采样与笔顺数据的署名（Salamander 钢琴为 CC-BY 3.0，必须署名）
+const CARD_LINES = [
+  null,
+  [['故事 · 美术 · 动画 · 配乐', 'Story · Art · Animation · Music'], ['全片画面与配乐由代码逐帧生成', 'every frame and every note generated in code']],
+  [['音效（CC0 · OpenGameArt）', 'Sound effects (CC0, OpenGameArt)'], ['bashar3a · remaxim · thimras · isaiah658', 'syncopika · ignasd · pauliuw']],
+  [['采样 VSCO 2 Community Edition — Versilian Studios', 'Orchestral samples (CC0)'], ['Salamander Grand Piano — Alexander Holm', 'Piano samples (CC-BY 3.0)']],
+  [['音色 GeneralUser GS — S. Christian Collins', 'Instruments: GeneralUser GS'], ['字体 马善政 · 志莽行书 · 站酷小薇 · Cormorant', 'Fonts under the SIL Open Font License']],
+  [['笔顺 Make Me a Hanzi（文鼎 PL 楷书）', 'Stroke-order data under the Arphic Public License'], ['题诗 清 · 高鼎《村居》', 'Poem: Gao Ding, “Village Life” (Qing dynasty)']],
+  [['工具 Chromium · WebGL · FFmpeg · Python · Claude', 'Tools'], ['谢谢观看', 'Thank you for watching']],
 ];
+const CARDS = CARD_LINES.map((lines, i) => {
+  const t0 = 0.6 + i * 3.7, t1 = t0 + 3.4;
+  return lines ? { t0, t1, lines } : { t0, t1, kind: 'title' };
+});
 
 export const S27 = {
   id: 'S27',
-  dur: 25,
+  dur: 28,
   amb: 'none',
   post: { vig: 0.55, wobble: 0.7 },
   render(ctx, t, R) {
@@ -62,7 +57,7 @@ export const S27 = {
       }
     }
     // 结尾：一只小燕子飞过
-    const u = prog(t, 23.0, 25.0, 'inOutSine');
+    const u = prog(t, 26.0, 28.0, 'inOutSine');
     if (u > 0 && u < 1) {
       ctx.save();
       ctx.globalCompositeOperation = 'multiply';
