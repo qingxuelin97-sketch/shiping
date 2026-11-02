@@ -41,9 +41,12 @@ def tone(freq, seconds, decay, phase_mod=None):
 
 
 def s_inkdrop():
+    # 起音放缓到 6 ms、高频噪声减轻：避免 AAC 编码在这个瞬态上冲高真峰值
     x = tone(lambda t: 420 + 900 * np.exp(-t * 28), 0.4, 16) * 0.7
-    x = stereo(x) + bandpass(noise(0.4, 1), 2500, 7000) * env(int(0.4 * SR), 0.002, 0.03)[:, None] * 0.25
-    return norm(reverb(x, 0.4, 1.6), -8)
+    k = int(0.006 * SR)
+    x[:k] *= np.sin(np.linspace(0, np.pi / 2, k)) ** 2
+    x = stereo(x) + bandpass(noise(0.4, 1), 2500, 7000) * env(int(0.4 * SR), 0.006, 0.03)[:, None] * 0.14
+    return norm(reverb(x, 0.4, 1.6), -10)
 
 
 def s_bloom():

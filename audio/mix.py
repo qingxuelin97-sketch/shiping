@@ -15,6 +15,7 @@ from scipy import signal  # noqa: E402
 from lib import SR, BUILD, db, write, peak_db, rms_db  # noqa: E402
 
 GAINS = {"score.wav": 0.0, "amb.wav": -1.0, "fx.wav": -1.5}
+TP_CEIL = -2.4  # 真峰值上限（dBTP）
 
 
 def envelope_db(x, win=0.3):
@@ -128,22 +129,23 @@ def main():
     mix = tracks["score.wav"] + tracks["amb.wav"] + tracks["fx.wav"]
     mix, gr = compressor(mix)
     print(f"总线压缩：平均 {gr.mean():.2f} dB，最多 {gr.min():.1f} dB")
-    # 先把积分响度推到 -16 LUFS，再做真峰值限幅（-1.8 dBTP），loudnorm 只需做很小的线性修正
+    # 先把积分响度推到 -16 LUFS，再做真峰值限幅；上限取 -2.4 dBTP，给 AAC 编码后的峰值回升留出余量
+    # （实测 AAC 192k 会让真峰值升高约 0.5 dB），成片仍满足 ≤ -1.5 dBTP。loudnorm 只做很小的线性修正
     L0 = lufs(mix)
     mix = mix * db(-16.0 - L0)
-    mix = tp_limiter(mix, -1.8)
-    mix = tp_limiter(mix, -1.8)
+    mix = tp_limiter(mix, TP_CEIL)
+    mix = tp_limiter(mix, TP_CEIL)
     print(f"响度：{L0:.1f} → {lufs(mix):.1f} LUFS，真峰值 {20 * np.log10(true_peak_env(mix).max()):.2f} dBTP")
     pre = os.path.join(BUILD, "premix.wav")
     write(pre, mix)
     # loudnorm 第一遍：测量
-    r = subprocess.run(["ffmpeg", "-hide_banner", "-nostats", "-i", pre, "-af", "loudnorm=I=-16:TP=-1.5:LRA=14:print_format=json", "-f", "null", "-"],
+    r = subprocess.run(["ffmpeg", "-hide_banner", "-nostats", "-i", pre, "-af", "loudnorm=I=-16:TP=-2.2:LRA=14:print_format=json", "-f", "null", "-"],
                        capture_output=True, text=True)
     txt = r.stderr
     js = json.loads(txt[txt.rindex("{"): txt.rindex("}") + 1])
     print("测得：", {k: js[k] for k in ("input_i", "input_tp", "input_lra")})
     out = os.path.join(BUILD, "final.wav")
-    af = ("loudnorm=I=-16:TP=-1.5:LRA=14:linear=true:"
+    af = ("loudnorm=I=-16:TP=-2.2:LRA=14:linear=true:"
           f"measured_I={js['input_i']}:measured_TP={js['input_tp']}:measured_LRA={js['input_lra']}:"
           f"measured_thresh={js['input_thresh']}:offset={js['target_offset']}:print_format=summary")
     subprocess.run(["ffmpeg", "-hide_banner", "-nostats", "-y", "-i", pre, "-af", af, "-ar", str(SR), "-c:a", "pcm_s24le", out],
