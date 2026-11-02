@@ -14,6 +14,7 @@ import { ground, STOOL_X, stoolY, SEAT, stool, pathAt, depthScale, scaled, kiteW
 import { caughtKiteDraw } from './act2.js';
 import { S05, launchShot, bigHead } from './act1.js';
 import { C } from '../world/palette.js';
+import { makeCanvas } from '../core/canvas.js';
 
 const W_SLEEVE = [176, 190, 182];
 const WINTER_POST = { sat: 0.28, tint: [0.97, 0.99, 1.03] };
@@ -290,6 +291,51 @@ export const S23 = {
 };
 
 // ---------------- S24 爷爷的淡墨身影 ----------------
+let GH = null;
+function ghostLayer(c, R) {
+  if (!GH || GH.W !== R.W) GH = { W: R.W, H: R.H, a: makeCanvas(R.W, R.H), b: makeCanvas(R.W, R.H), s: makeCanvas(R.W, R.H) };
+  for (const k of ['a', 'b', 's']) {
+    const x = GH[k].ctx;
+    x.setTransform(1, 0, 0, 1, 0, 0);
+    x.globalAlpha = 1;
+    x.globalCompositeOperation = 'source-over';
+    x.filter = 'none';
+    x.clearRect(0, 0, R.W, R.H);
+  }
+  const g = GH.a.ctx;
+  g.white = GH.b.ctx;
+  g.base = c.base;
+  g.fg = g;
+  g.bg = g;
+  g.setTransform(c.getTransform());
+  return g;
+}
+function ghostComposite(c, R, a) {
+  c.save();
+  c.setTransform(1, 0, 0, 1, 0, 0);
+  c.globalCompositeOperation = 'source-over';
+  c.globalAlpha = a;
+  c.drawImage(GH.a, 0, 0);
+  c.restore();
+  const W = whiteOf(c);
+  if (!W) return;
+  // 白色剪影，模糊后当作晕光
+  const sx = GH.s.ctx;
+  sx.drawImage(GH.a, 0, 0);
+  sx.globalCompositeOperation = 'source-in';
+  sx.fillStyle = '#fff';
+  sx.fillRect(0, 0, R.W, R.H);
+  W.save();
+  W.setTransform(1, 0, 0, 1, 0, 0);
+  W.globalCompositeOperation = 'source-over';
+  W.globalAlpha = a;
+  W.drawImage(GH.b, 0, 0);
+  W.filter = `blur(${(10 * R.base).toFixed(1)}px)`;
+  W.globalAlpha = a * 0.55;
+  W.drawImage(GH.s, 0, 0);
+  W.restore();
+}
+
 export const S24 = {
   id: 'S24',
   dur: 6,
@@ -309,7 +355,10 @@ export const S24 = {
           // 淡墨的爷爷：微笑着，轻轻抬手（像当年那样），随后在一阵花瓣里散去
           const wv = envelope(t, 2.0, 3.0, 0.5, 0.5);
           const arm = [lerp(0.15, -2.2 + Math.sin(t * 6) * 0.18, Ease.inOutSine(wv)), lerp(0.2, -0.25, wv)];
-          GRANDPA.draw(c, { ...POSE.lookUp, armF: arm, head: lerp(-0.6, -0.15, prog(t, 1.4, 2.4)), lean: 0.12, x: 1150, y: ground(1150), facing: -1, smile: 0.9, alpha: ga }, t);
+          // 整个人先画在临时图层上，再整体以淡墨透明度叠上去（避免各部分分别透明时互相透出），外加一圈白粉晕光
+          const g = ghostLayer(c, R);
+          GRANDPA.draw(g, { ...POSE.lookUp, armF: arm, head: lerp(-0.6, -0.15, prog(t, 1.4, 2.4)), lean: 0.12, x: 1150, y: ground(1150), facing: -1, smile: 0.9, noShadow: true }, t);
+          ghostComposite(c, R, ga);
           if (t > 3.4) {
             drawPetals(c, t, { region: [1110, 590, 1190, 720], count: Math.round(18 * (1 - prog(t, 3.4, 5.6))), vx: -120, vy: -10, seed: 33, size: 2.2 });
           }
