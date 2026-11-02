@@ -208,5 +208,23 @@
     "use": "汽车引擎",
     "bytes": 828585,
     "sha256": "6ac9e73a6e4d0ec2a7d70f1f2c833622f60c60f517488600b070708b2b4c2396"
+  },
+  {
+    "path": "samples/vsco2",
+    "url": "https://github.com/sgossner/VSCO-2-CE",
+    "page": "https://github.com/sgossner/VSCO-2-CE",
+    "author": "Versilian Studios (Sam Gossner)",
+    "license": "CC0 1.0",
+    "use": "弦乐组、独奏小提琴（二胡）、长笛（笛、箫）、竖琴、钟琴、定音鼓、拨弦",
+    "files": 311
+  },
+  {
+    "path": "samples/salamander",
+    "url": "https://github.com/sfzinstruments/SalamanderGrandPiano",
+    "page": "https://github.com/sfzinstruments/SalamanderGrandPiano",
+    "author": "Alexander Holm",
+    "license": "CC-BY 3.0",
+    "use": "钢琴（取 v4/v7/v10/v13 四个力度层）",
+    "files": 120
   }
 ]
